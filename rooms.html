@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooms Management - Hotel Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hotel: {
+                            primary: '#1e3a5f',
+                            secondary: '#2d5a27',
+                            accent: '#c4a747',
+                            light: '#f4f1e8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-hotel-primary shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">🏨</span>
+                    <span class="text-white text-xl font-bold">Grand Horizon Hotel</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="currentUserName" class="text-gray-200"></span>
+                    <button onclick="handleLogout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300 text-sm font-semibold">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar and Main Content -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg min-h-screen">
+            <nav class="mt-6">
+                <a href="dashboard.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">📊</span>
+                    Dashboard
+                </a>
+                <a href="rooms.html" class="flex items-center px-6 py-3 text-hotel-primary bg-blue-50 border-l-4 border-hotel-primary font-semibold">
+                    <span class="text-xl mr-3">🚪</span>
+                    Rooms
+                </a>
+                <a href="customers.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">👥</span>
+                    Customers
+                </a>
+                <a href="bookings.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">📅</span>
+                    Bookings
+                </a>
+                <a href="payments.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">💳</span>
+                    Payments
+                </a>
+                <div class="border-t border-gray-200 my-4"></div>
+                <a href="faceid.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">👤</span>
+                    Face ID
+                </a>
+                <a href="controls.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">🎛️</span>
+                    Room Controls
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <!-- Page Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Rooms Management</h1>
+                    <p class="text-gray-600 mt-1">Manage hotel rooms and their status</p>
+                </div>
+                <button onclick="openAddRoomModal()" class="bg-hotel-primary text-white px-6 py-3 rounded-lg hover:bg-blue-900 transition duration-300 font-semibold flex items-center">
+                    <span class="text-xl mr-2">+</span> Add Room
+                </button>
+            </div>
+
+            <!-- Rooms Grid -->
+            <div id="roomsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Rooms will be loaded dynamically -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-12 hidden">
+                <div class="text-6xl mb-4">🚪</div>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">No Rooms Found</h3>
+                <p class="text-gray-500">Click "Add Room" to create your first room.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Room Modal -->
+    <div id="roomModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-6">Add New Room</h2>
+            <form id="roomForm" onsubmit="handleSaveRoom(event)" novalidate>
+                <input type="hidden" id="roomId">
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Room Number *</label>
+                    <input type="text" id="roomNumber" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent"
+                           placeholder="e.g., 101, 202A">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Room Type *</label>
+                    <select id="roomType" required 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent">
+                        <option value="">Select Type</option>
+                        <option value="Single">Single</option>
+                        <option value="Double">Double</option>
+                        <option value="Suite">Suite</option>
+                        <option value="Deluxe">Deluxe</option>
+                        <option value="Penthouse">Penthouse</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Price per Night ($) *</label>
+                    <input type="number" id="roomPrice" required min="1" step="0.01"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent"
+                           placeholder="0.00">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Status *</label>
+                    <select id="roomStatus" required 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent">
+                        <option value="">Select Status</option>
+                        <option value="Available">Available</option>
+                        <option value="Booked">Booked</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button type="button" onclick="closeRoomModal()" 
+                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition duration-300">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 bg-hotel-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-900 transition duration-300">
+                        Save Room
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <div class="text-center">
+                <div class="text-5xl mb-4">⚠️</div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Delete Room?</h2>
+                <p class="text-gray-600 mb-6">Are you sure you want to delete this room? This action cannot be undone.</p>
+                <input type="hidden" id="deleteRoomId">
+                <div class="flex space-x-4">
+                    <button onclick="closeDeleteModal()" 
+                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition duration-300">
+                        Cancel
+                    </button>
+                    <button onclick="confirmDeleteRoom()" 
+                            class="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition duration-300">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="database.js"></script>
+    <script src="rooms.js"></script>
+</body>
+</html>

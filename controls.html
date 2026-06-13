@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Controls - Hotel Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hotel: {
+                            primary: '#1e3a5f',
+                            secondary: '#2d5a27',
+                            accent: '#c4a747',
+                            light: '#f4f1e8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-hotel-primary shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">🏨</span>
+                    <span class="text-white text-xl font-bold">Grand Horizon Hotel</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="currentUserName" class="text-gray-200"></span>
+                    <button onclick="handleLogout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300 text-sm font-semibold">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar and Main Content -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg min-h-screen">
+            <nav class="mt-6">
+                <a href="dashboard.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">📊</span>
+                    Dashboard
+                </a>
+                <a href="rooms.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">🚪</span>
+                    Rooms
+                </a>
+                <a href="customers.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">👥</span>
+                    Customers
+                </a>
+                <a href="bookings.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">📅</span>
+                    Bookings
+                </a>
+                <a href="payments.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">💳</span>
+                    Payments
+                </a>
+                <div class="border-t border-gray-200 my-4"></div>
+                <a href="faceid.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-hotel-primary transition duration-200">
+                    <span class="text-xl mr-3">👤</span>
+                    Face ID
+                </a>
+                <a href="controls.html" class="flex items-center px-6 py-3 text-hotel-primary bg-blue-50 border-l-4 border-hotel-primary font-semibold">
+                    <span class="text-xl mr-3">🎛️</span>
+                    Room Controls
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Room Controls</h1>
+                <p class="text-gray-600 mt-1">Smart room automation and management</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Room Selection Panel -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Select Room</h2>
+                        
+                        <div class="mb-4">
+                            <select id="controlRoomSelect" onchange="onControlRoomSelect()"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent">
+                                <option value="">Choose a booked room</option>
+                            </select>
+                        </div>
+
+                        <!-- Room Info Card -->
+                        <div id="controlRoomInfo" class="bg-gray-50 rounded-lg p-4 hidden">
+                            <h3 id="controlRoomNumber" class="font-bold text-gray-800 text-lg mb-2"></h3>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Type:</span>
+                                    <span id="controlRoomType" class="font-semibold"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Guest:</span>
+                                    <span id="controlRoomGuest" class="font-semibold"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Status:</span>
+                                    <span id="controlRoomStatus" class="font-semibold"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Check-Out:</span>
+                                    <span id="controlRoomCheckOut" class="font-semibold"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Status Overview -->
+                    <div class="bg-white rounded-xl shadow-md p-6 mt-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Controls Overview</h2>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Lights</span>
+                                <span id="overviewLights" class="font-semibold">—</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Air Conditioning</span>
+                                <span id="overviewAC" class="font-semibold">—</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Door Lock</span>
+                                <span id="overviewDoor" class="font-semibold">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls Panel -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-6">Smart Controls</h2>
+                        
+                        <!-- Lights Control -->
+                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-4xl">💡</span>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800 text-lg">Lights</h3>
+                                        <p id="lightsStatusText" class="text-gray-600 text-sm">Status: Unknown</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="lightsOnBtn" onclick="toggleLights(true)" disabled
+                                            class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                                        ON
+                                    </button>
+                                    <button id="lightsOffBtn" onclick="toggleLights(false)" disabled
+                                            class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                                        OFF
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Light intensity slider -->
+                            <div class="flex items-center space-x-3">
+                                <span class="text-gray-600 text-sm">Brightness:</span>
+                                <input type="range" id="lightsIntensity" min="0" max="100" value="0" disabled
+                                       oninput="updateLightsIntensity(this.value)"
+                                       class="flex-1 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-yellow-500">
+                                <span id="lightsIntensityValue" class="text-gray-600 text-sm font-semibold w-12">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Air Conditioning Control -->
+                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-4xl">❄️</span>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800 text-lg">Air Conditioning</h3>
+                                        <p id="acStatusText" class="text-gray-600 text-sm">Status: Unknown</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="acOnBtn" onclick="toggleAC(true)" disabled
+                                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                                        ON
+                                    </button>
+                                    <button id="acOffBtn" onclick="toggleAC(false)" disabled
+                                            class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                                        OFF
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Temperature control -->
+                            <div class="flex items-center space-x-3">
+                                <span class="text-gray-600 text-sm">Temperature:</span>
+                                <button onclick="adjustTemperature(-1)" disabled id="tempDownBtn"
+                                        class="w-8 h-8 bg-gray-300 rounded-full hover:bg-gray-400 transition duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed">−</button>
+                                <span id="temperatureDisplay" class="text-2xl font-bold text-gray-800 mx-3">—</span>
+                                <button onclick="adjustTemperature(1)" disabled id="tempUpBtn"
+                                        class="w-8 h-8 bg-gray-300 rounded-full hover:bg-gray-400 transition duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed">+</button>
+                                <span class="text-gray-600 text-sm ml-4">°C</span>
+                            </div>
+                        </div>
+
+                        <!-- Door Lock Control -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-4xl">🔒</span>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800 text-lg">Door Lock</h3>
+                                        <p id="doorStatusText" class="text-gray-600 text-sm">Status: Unknown</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="doorLockBtn" onclick="toggleDoorLock(true)" disabled
+                                            class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                                        🔒 Lock
+                                    </button>
+                                    <button id="doorUnlockBtn" onclick="toggleDoorLock(false)" disabled
+                                            class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                                        🔓 Unlock
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Door status indicator -->
+                            <div id="doorStatusIndicator" class="mt-4 flex items-center space-x-2">
+                                <div id="doorIndicatorLight" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                                <span id="doorIndicatorText" class="text-gray-600 text-sm">Door status unknown</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="database.js"></script>
+    <script src="controls.js"></script>
+</body>
+</html>
