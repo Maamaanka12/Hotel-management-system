@@ -1,113 +1,114 @@
-// dashboard.js - Dashboard Statistics and Data Loading
+/*
+ * dashboard.js
+ * Builds the layout, then renders live statistics and the 5 most recent bookings.
+ */
 
-// Check authentication
-const currentUser = JSON.parse(localStorage.getItem('hotel_currentUser'));
-if (!currentUser) {
-    window.location.href = 'index.html';
+buildLayout();
+
+function renderDashboard() {
+  const rooms = Database.getRooms();
+  const customers = Database.getCustomers();
+  const bookings = Database.getBookings();
+
+  const totalRooms = rooms.length;
+  const availableRooms = rooms.filter(function (room) {
+    return room.status === "Available";
+  }).length;
+  const bookedRooms = rooms.filter(function (room) {
+    return room.status === "Booked";
+  }).length;
+  const totalCustomers = customers.length;
+
+  const statCards = [
+    { label: "Total Rooms", value: totalRooms, color: "bg-teal-600" },
+    { label: "Available", value: availableRooms, color: "bg-green-600" },
+    { label: "Booked", value: bookedRooms, color: "bg-blue-600" },
+    { label: "Total Customers", value: totalCustomers, color: "bg-slate-700" },
+  ];
+
+  const statCardsMarkup = statCards
+    .map(function (card) {
+      return (
+        '<div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">' +
+        '<div class="mb-3 h-2 w-10 rounded-full ' +
+        card.color +
+        '"></div>' +
+        '<p class="text-2xl font-bold text-slate-900">' +
+        card.value +
+        "</p>" +
+        '<p class="text-sm font-medium text-slate-500">' +
+        card.label +
+        "</p>" +
+        "</div>"
+      );
+    })
+    .join("");
+
+  // Most recent 5 bookings (newest first by id).
+  const recentBookings = bookings
+    .slice()
+    .sort(function (firstBooking, secondBooking) {
+      return Number(secondBooking.id) - Number(firstBooking.id);
+    })
+    .slice(0, 5);
+
+  let recentRows = "";
+  if (recentBookings.length === 0) {
+    recentRows =
+      '<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-slate-400">No bookings yet.</td></tr>';
+  } else {
+    recentRows = recentBookings
+      .map(function (booking) {
+        const customer = Database.getCustomerById(booking.customerId);
+        const room = Database.getRoomById(booking.roomId);
+        return (
+          '<tr class="border-t border-slate-100">' +
+          '<td class="px-4 py-3 text-sm text-slate-700">' +
+          (customer ? customer.name : "Unknown") +
+          "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' +
+          (room ? room.number : "Unknown") +
+          "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' +
+          booking.checkIn +
+          "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' +
+          booking.checkOut +
+          "</td>" +
+          '<td class="px-4 py-3">' +
+          statusBadge(booking.status) +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+  }
+
+  const content =
+    '<div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">' +
+    statCardsMarkup +
+    "</div>" +
+    '<div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">' +
+    '<div class="border-b border-slate-100 px-5 py-4">' +
+    '<h2 class="text-base font-semibold text-slate-900">Recent Bookings</h2>' +
+    "</div>" +
+    '<div class="overflow-x-auto">' +
+    '<table class="w-full min-w-[600px]">' +
+    '<thead><tr class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">' +
+    '<th class="px-4 py-3">Customer</th>' +
+    '<th class="px-4 py-3">Room</th>' +
+    '<th class="px-4 py-3">Check-In</th>' +
+    '<th class="px-4 py-3">Check-Out</th>' +
+    '<th class="px-4 py-3">Status</th>' +
+    "</tr></thead>" +
+    "<tbody>" +
+    recentRows +
+    "</tbody>" +
+    "</table>" +
+    "</div>" +
+    "</div>";
+
+  document.getElementById("pageContent").innerHTML = content;
 }
 
-// Display current user name
-document.getElementById('currentUserName').textContent = `👤 ${currentUser.name}`;
-
-// Logout function
-function handleLogout() {
-    localStorage.removeItem('hotel_currentUser');
-    window.location.href = 'index.html';
-}
-
-// Load dashboard statistics
-function loadDashboardStats() {
-    const rooms = Database.getAll('hotel_rooms');
-    const customers = Database.getAll('hotel_customers');
-    const bookings = Database.getAll('hotel_bookings');
-
-    // Calculate statistics
-    const totalRooms = rooms.length;
-    const availableRooms = rooms.filter(room => room.status === 'Available').length;
-    const bookedRooms = rooms.filter(room => room.status === 'Booked').length;
-    const totalCustomers = customers.length;
-
-    // Update DOM elements
-    document.getElementById('totalRooms').textContent = totalRooms;
-    document.getElementById('availableRooms').textContent = availableRooms;
-    document.getElementById('bookedRooms').textContent = bookedRooms;
-    document.getElementById('totalCustomers').textContent = totalCustomers;
-
-    // Load recent bookings
-    loadRecentBookings(bookings, customers, rooms);
-}
-
-// Load 5 most recent bookings
-function loadRecentBookings(bookings, customers, rooms) {
-    const tableBody = document.getElementById('recentBookingsTableBody');
-    
-    if (bookings.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center py-8 text-gray-500">No bookings yet</td>
-            </tr>`;
-        return;
-    }
-
-    // Sort bookings by creation date (newest first) and take first 5
-    const recentBookings = bookings
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5);
-
-    tableBody.innerHTML = recentBookings.map(booking => {
-        const customer = customers.find(c => c.id === booking.customerId);
-        const room = rooms.find(r => r.id === booking.roomId);
-        
-        const customerName = customer ? customer.name : 'Unknown';
-        const roomNumber = room ? room.roomNumber : 'Unknown';
-        
-        const statusClass = getStatusClass(booking.status);
-
-        return `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition duration-150">
-                <td class="py-3 text-gray-800">${customerName}</td>
-                <td class="py-3 text-gray-600">Room ${roomNumber}</td>
-                <td class="py-3 text-gray-600">${formatDate(booking.checkInDate)}</td>
-                <td class="py-3 text-gray-600">${formatDate(booking.checkOutDate)}</td>
-                <td class="py-3">
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${statusClass}">
-                        ${booking.status}
-                    </span>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-// Get CSS class based on booking status
-function getStatusClass(status) {
-    switch(status) {
-        case 'Active':
-            return 'bg-green-100 text-green-700';
-        case 'Completed':
-            return 'bg-blue-100 text-blue-700';
-        case 'Cancelled':
-            return 'bg-red-100 text-red-700';
-        case 'Pending':
-            return 'bg-yellow-100 text-yellow-700';
-        default:
-            return 'bg-gray-100 text-gray-700';
-    }
-}
-
-// Format date for display
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-}
-
-// Load dashboard on page load
-document.addEventListener('DOMContentLoaded', loadDashboardStats);
-
-// Refresh data when page becomes visible (in case data changed in other tabs)
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        loadDashboardStats();
-    }
-});
+renderDashboard();

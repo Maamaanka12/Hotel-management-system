@@ -1,288 +1,264 @@
-// payments.js - Payment Management CRUD Operations
+/*
+ * payments.js
+ * CRUD for payments. Fields: Customer, Room, Amount, Method, Status.
+ *
+ * Key behaviors:
+ *  - If the page is opened with ?bookingId=... (from the Bookings flow),
+ *    the modal opens automatically pre-filled with that booking's customer
+ *    and room, and the room price as the default amount.
+ *  - A customer cannot pay twice for the same room: if a payment already
+ *    exists for that customer + room pair, saving is blocked.
+ */
 
-// Check authentication
-const currentUser = JSON.parse(localStorage.getItem('hotel_currentUser'));
-if (!currentUser) {
-    window.location.href = 'index.html';
+buildLayout();
+
+let editingPaymentId = null;
+
+function renderPaymentsPage() {
+  const content =
+    '<div class="mb-5 flex items-center justify-between">' +
+    '<p class="text-sm text-slate-500">Record and track payments</p>' +
+    '<button id="addPaymentButton" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700">+ New Payment</button>' +
+    "</div>" +
+    '<div id="paymentsTableContainer" class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"></div>' +
+    buildPaymentModalShell();
+
+  document.getElementById("pageContent").innerHTML = content;
+
+  document.getElementById("addPaymentButton").addEventListener("click", function () {
+    openPaymentModal(null, null);
+  });
+  document.getElementById("paymentModalCloseButton").addEventListener("click", closePaymentModal);
+  document.getElementById("paymentModalCancelButton").addEventListener("click", closePaymentModal);
+  document.getElementById("paymentForm").addEventListener("submit", savePayment);
+
+  renderPaymentsTable();
+
+  // If we arrived from the Bookings page, open the pre-filled modal.
+  const params = new URLSearchParams(window.location.search);
+  const bookingId = params.get("bookingId");
+  if (bookingId) {
+    openPaymentModal(null, bookingId);
+  }
 }
 
-// Display current user name
-document.getElementById('currentUserName').textContent = `👤 ${currentUser.name}`;
-
-// Logout function
-function handleLogout() {
-    localStorage.removeItem('hotel_currentUser');
-    window.location.href = 'index.html';
+function buildPaymentModalShell() {
+  return (
+    '<div id="paymentModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/40 p-4">' +
+    '<div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">' +
+    '<div class="mb-4 flex items-center justify-between">' +
+    '<h2 id="paymentModalTitle" class="text-lg font-semibold text-slate-900">New Payment</h2>' +
+    '<button id="paymentModalCloseButton" class="text-slate-400 hover:text-slate-600">&times;</button>' +
+    "</div>" +
+    '<form id="paymentForm" class="space-y-4">' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Customer</label>' +
+    '<select id="paymentCustomer" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"></select></div>' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Room</label>' +
+    '<select id="paymentRoom" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"></select></div>' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Amount</label>' +
+    '<input type="number" id="paymentAmount" min="0" step="0.01" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" /></div>' +
+    '<div class="grid grid-cols-2 gap-3">' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Method</label>' +
+    '<select id="paymentMethod" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">' +
+    '<option value="Cash">Cash</option><option value="Card">Card</option><option value="Mobile Money">Mobile Money</option></select></div>' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Status</label>' +
+    '<select id="paymentStatus" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">' +
+    '<option value="Paid">Paid</option><option value="Pending">Pending</option><option value="Failed">Failed</option></select></div>' +
+    "</div>" +
+    '<p id="paymentError" class="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>' +
+    '<div class="flex justify-end gap-3 pt-1">' +
+    '<button type="button" id="paymentModalCancelButton" class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">Cancel</button>' +
+    '<button type="submit" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">Save Payment</button>' +
+    "</div>" +
+    "</form>" +
+    "</div>" +
+    "</div>"
+  );
 }
 
-// Load payments on page load
-document.addEventListener('DOMContentLoaded', () => {
-    loadPayments();
-    loadPaymentSummary();
-});
+function populatePaymentSelects() {
+  const customers = Database.getCustomers();
+  const rooms = Database.getRooms();
 
-// Populate booking dropdown
-function populateBookingDropdown() {
-    const bookings = Database.getAll('hotel_bookings');
-    const customers = Database.getAll('hotel_customers');
-    const rooms = Database.getAll('hotel_rooms');
-    const bookingSelect = document.getElementById('paymentBooking');
-    
-    bookingSelect.innerHTML = '<option value="">Choose a booking</option>' +
-        bookings.map(booking => {
-            const customer = customers.find(c => c.id === booking.customerId);
-            const room = rooms.find(r => r.id === booking.roomId);
-            const customerName = customer ? customer.name : 'Unknown';
-            const roomNumber = room ? room.roomNumber : 'Unknown';
-            
-            return `<option value="${booking.id}">
-                ${customerName} - Room ${roomNumber} (${booking.status})
-            </option>`;
-        }).join('');
+  document.getElementById("paymentCustomer").innerHTML =
+    '<option value="">Select customer...</option>' +
+    customers
+      .map(function (customer) {
+        return '<option value="' + customer.id + '">' + customer.name + "</option>";
+      })
+      .join("");
+
+  document.getElementById("paymentRoom").innerHTML =
+    '<option value="">Select room...</option>' +
+    rooms
+      .map(function (room) {
+        return '<option value="' + room.id + '">Room ' + room.number + " (" + room.type + ")</option>";
+      })
+      .join("");
 }
 
-// Load payment summary
-function loadPaymentSummary() {
-    const payments = Database.getAll('hotel_payments');
-    
-    let totalCollected = 0;
-    let totalPending = 0;
-    
-    payments.forEach(payment => {
-        if (payment.paymentStatus === 'Completed') {
-            totalCollected += parseFloat(payment.amount);
-        } else if (payment.paymentStatus === 'Pending') {
-            totalPending += parseFloat(payment.amount);
-        }
+function renderPaymentsTable() {
+  const payments = Database.getPayments();
+  let rows = "";
+
+  if (payments.length === 0) {
+    rows =
+      '<tr><td colspan="6" class="px-4 py-8 text-center text-sm text-slate-400">No payments recorded yet.</td></tr>';
+  } else {
+    rows = payments
+      .map(function (payment) {
+        const customer = Database.getCustomerById(payment.customerId);
+        const room = Database.getRoomById(payment.roomId);
+        return (
+          '<tr class="border-t border-slate-100">' +
+          '<td class="px-4 py-3 text-sm font-medium text-slate-800">' + (customer ? customer.name : "Unknown") + "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' + (room ? room.number : "Unknown") + "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' + formatMoney(payment.amount) + "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' + payment.method + "</td>" +
+          '<td class="px-4 py-3">' + statusBadge(payment.status) + "</td>" +
+          '<td class="px-4 py-3 text-right">' +
+          '<button data-edit="' + payment.id + '" class="mr-2 text-sm font-medium text-teal-600 hover:underline">Edit</button>' +
+          '<button data-delete="' + payment.id + '" class="text-sm font-medium text-red-600 hover:underline">Delete</button>' +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+  }
+
+  document.getElementById("paymentsTableContainer").innerHTML =
+    '<div class="overflow-x-auto"><table class="w-full min-w-[700px]">' +
+    '<thead><tr class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">' +
+    '<th class="px-4 py-3">Customer</th>' +
+    '<th class="px-4 py-3">Room</th>' +
+    '<th class="px-4 py-3">Amount</th>' +
+    '<th class="px-4 py-3">Method</th>' +
+    '<th class="px-4 py-3">Status</th>' +
+    '<th class="px-4 py-3 text-right">Actions</th>' +
+    "</tr></thead><tbody>" +
+    rows +
+    "</tbody></table></div>";
+
+  document.querySelectorAll("[data-edit]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      openPaymentModal(button.getAttribute("data-edit"), null);
     });
-    
-    document.getElementById('totalCollected').textContent = `$${totalCollected.toFixed(2)}`;
-    document.getElementById('totalPending').textContent = `$${totalPending.toFixed(2)}`;
-    document.getElementById('totalTransactions').textContent = payments.length;
+  });
+  document.querySelectorAll("[data-delete]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      deletePayment(button.getAttribute("data-delete"));
+    });
+  });
 }
 
-// Load and display payments
-function loadPayments() {
-    const payments = Database.getAll('hotel_payments');
-    const bookings = Database.getAll('hotel_bookings');
-    const customers = Database.getAll('hotel_customers');
-    const rooms = Database.getAll('hotel_rooms');
-    const tableBody = document.getElementById('paymentsTableBody');
+function openPaymentModal(paymentId, bookingId) {
+  if (Database.getCustomers().length === 0 || Database.getRooms().length === 0) {
+    window.alert("Please add at least one customer and one room before recording a payment.");
+    return;
+  }
 
-    // Sort by date (newest first)
-    payments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+  editingPaymentId = paymentId;
+  populatePaymentSelects();
+  document.getElementById("paymentError").classList.add("hidden");
 
-    if (payments.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center py-8 text-gray-500">No payments recorded yet</td>
-            </tr>`;
-        return;
+  if (paymentId) {
+    // Editing an existing payment.
+    const payment = Database.getPaymentById(paymentId);
+    document.getElementById("paymentModalTitle").textContent = "Edit Payment";
+    document.getElementById("paymentCustomer").value = payment.customerId;
+    document.getElementById("paymentRoom").value = payment.roomId;
+    document.getElementById("paymentAmount").value = payment.amount;
+    document.getElementById("paymentMethod").value = payment.method;
+    document.getElementById("paymentStatus").value = payment.status;
+  } else if (bookingId) {
+    // Pre-fill from a booking (came from the Bookings page).
+    const booking = Database.getBookingById(bookingId);
+    document.getElementById("paymentModalTitle").textContent = "New Payment";
+    if (booking) {
+      const room = Database.getRoomById(booking.roomId);
+      document.getElementById("paymentCustomer").value = booking.customerId;
+      document.getElementById("paymentRoom").value = booking.roomId;
+      document.getElementById("paymentAmount").value = room ? room.price : "";
     }
+    document.getElementById("paymentMethod").value = "Cash";
+    document.getElementById("paymentStatus").value = "Paid";
+  } else {
+    // Blank new payment.
+    document.getElementById("paymentModalTitle").textContent = "New Payment";
+    document.getElementById("paymentCustomer").value = "";
+    document.getElementById("paymentRoom").value = "";
+    document.getElementById("paymentAmount").value = "";
+    document.getElementById("paymentMethod").value = "Cash";
+    document.getElementById("paymentStatus").value = "Paid";
+  }
 
-    tableBody.innerHTML = payments.map(payment => {
-        const booking = bookings.find(b => b.id === payment.bookingId);
-        const customer = booking ? customers.find(c => c.id === booking.customerId) : null;
-        const room = booking ? rooms.find(r => r.id === booking.roomId) : null;
-        
-        let bookingRef = 'N/A';
-        if (customer && room) {
-            bookingRef = `${customer.name} - Room ${room.roomNumber}`;
-        } else if (customer) {
-            bookingRef = customer.name;
-        } else if (room) {
-            bookingRef = `Room ${room.roomNumber}`;
-        }
-        
-        const statusClass = getPaymentStatusClass(payment.paymentStatus);
-        const methodIcon = getPaymentMethodIcon(payment.paymentMethod);
-
-        return `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition duration-150">
-                <td class="px-6 py-4 text-gray-800 text-sm">${bookingRef}</td>
-                <td class="px-6 py-4">
-                    <span class="font-bold text-hotel-primary">$${parseFloat(payment.amount).toFixed(2)}</span>
-                </td>
-                <td class="px-6 py-4 text-gray-600">
-                    <span>${methodIcon} ${payment.paymentMethod}</span>
-                </td>
-                <td class="px-6 py-4 text-gray-600">${formatDate(payment.paymentDate)}</td>
-                <td class="px-6 py-4">
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${statusClass}">
-                        ${payment.paymentStatus}
-                    </span>
-                </td>
-                <td class="px-6 py-4">
-                    <div class="flex space-x-2">
-                        <button onclick="openEditPaymentModal('${payment.id}')" 
-                                class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition duration-200 text-sm">
-                            ✏️
-                        </button>
-                        <button onclick="openDeletePaymentModal('${payment.id}')" 
-                                class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition duration-200 text-sm">
-                            🗑️
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
+  const modal = document.getElementById("paymentModal");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
-// Get payment method icon
-function getPaymentMethodIcon(method) {
-    const icons = {
-        'Cash': '💵',
-        'Credit Card': '💳',
-        'Debit Card': '🏦',
-        'Bank Transfer': '🏛️',
-        'Online Payment': '🌐'
-    };
-    return icons[method] || '💰';
-}
-
-// Get payment status CSS class
-function getPaymentStatusClass(status) {
-    switch(status) {
-        case 'Completed':
-            return 'bg-green-100 text-green-700';
-        case 'Pending':
-            return 'bg-yellow-100 text-yellow-700';
-        case 'Failed':
-            return 'bg-red-100 text-red-700';
-        case 'Refunded':
-            return 'bg-purple-100 text-purple-700';
-        default:
-            return 'bg-gray-100 text-gray-700';
-    }
-}
-
-// Format date for display
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-}
-
-// Open Add Payment Modal
-function openAddPaymentModal() {
-    document.getElementById('modalTitle').textContent = 'Record Payment';
-    document.getElementById('paymentId').value = '';
-    document.getElementById('paymentForm').reset();
-    populateBookingDropdown();
-    document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('paymentModal').classList.remove('hidden');
-    document.getElementById('paymentModal').classList.add('flex');
-}
-
-// Open Edit Payment Modal
-function openEditPaymentModal(paymentId) {
-    const payment = Database.getById('hotel_payments', paymentId);
-    if (!payment) return;
-
-    document.getElementById('modalTitle').textContent = 'Edit Payment';
-    document.getElementById('paymentId').value = payment.id;
-    
-    populateBookingDropdown();
-    
-    document.getElementById('paymentBooking').value = payment.bookingId;
-    document.getElementById('paymentAmount').value = payment.amount;
-    document.getElementById('paymentDate').value = payment.paymentDate;
-    document.getElementById('paymentMethod').value = payment.paymentMethod;
-    document.getElementById('paymentStatus').value = payment.paymentStatus;
-    
-    document.getElementById('paymentModal').classList.remove('hidden');
-    document.getElementById('paymentModal').classList.add('flex');
-}
-
-// Close Payment Modal
 function closePaymentModal() {
-    document.getElementById('paymentModal').classList.add('hidden');
-    document.getElementById('paymentModal').classList.remove('flex');
-    document.getElementById('paymentForm').reset();
+  const modal = document.getElementById("paymentModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  editingPaymentId = null;
+
+  // Clean the bookingId out of the URL so reopening the page doesn't re-trigger.
+  if (window.location.search) {
+    window.history.replaceState({}, document.title, "payments.html");
+  }
 }
 
-// Handle Save Payment (Add or Edit)
-function handleSavePayment(event) {
-    event.preventDefault();
+function savePayment(event) {
+  event.preventDefault();
+  const errorElement = document.getElementById("paymentError");
 
-    const paymentId = document.getElementById('paymentId').value;
-    const bookingId = document.getElementById('paymentBooking').value;
-    const amount = document.getElementById('paymentAmount').value;
-    const paymentDate = document.getElementById('paymentDate').value;
-    const paymentMethod = document.getElementById('paymentMethod').value;
-    const paymentStatus = document.getElementById('paymentStatus').value;
+  const customerId = document.getElementById("paymentCustomer").value;
+  const roomId = document.getElementById("paymentRoom").value;
+  const amount = document.getElementById("paymentAmount").value;
+  const method = document.getElementById("paymentMethod").value;
+  const status = document.getElementById("paymentStatus").value;
 
-    // Validate all required fields
-    if (!bookingId || !amount || !paymentDate || !paymentMethod || !paymentStatus) {
-        alert('Please fill in all required fields.');
-        return false;
-    }
+  function showError(message) {
+    errorElement.textContent = message;
+    errorElement.classList.remove("hidden");
+  }
 
-    // Validate amount is positive
-    if (parseFloat(amount) <= 0) {
-        alert('Payment amount must be greater than 0.');
-        return false;
-    }
+  if (!customerId || !roomId || amount === "" || Number(amount) < 0) {
+    showError("Please fill in all fields with a valid amount.");
+    return;
+  }
 
-    const paymentData = {
-        bookingId: bookingId,
-        amount: parseFloat(amount),
-        paymentDate: paymentDate,
-        paymentMethod: paymentMethod,
-        paymentStatus: paymentStatus
-    };
+  // Logic: prevent the same customer paying twice for the same room.
+  if (Database.paymentExistsForCustomerRoom(customerId, roomId, editingPaymentId)) {
+    showError("A payment for this customer and room already exists. Duplicate payments are not allowed.");
+    return;
+  }
 
-    if (paymentId) {
-        // Update existing payment
-        Database.update('hotel_payments', paymentId, paymentData);
-    } else {
-        // Add new payment
-        Database.add('hotel_payments', paymentData);
-    }
+  const paymentData = {
+    customerId: customerId,
+    roomId: roomId,
+    amount: Number(amount),
+    method: method,
+    status: status,
+    date: new Date().toISOString(),
+  };
 
-    closePaymentModal();
-    loadPayments();
-    loadPaymentSummary();
-    return false;
+  if (editingPaymentId) {
+    Database.updatePayment(editingPaymentId, paymentData);
+  } else {
+    Database.addPayment(paymentData);
+  }
+
+  closePaymentModal();
+  renderPaymentsTable();
 }
 
-// Open Delete Confirmation Modal
-function openDeletePaymentModal(paymentId) {
-    document.getElementById('deletePaymentId').value = paymentId;
-    document.getElementById('deleteModal').classList.remove('hidden');
-    document.getElementById('deleteModal').classList.add('flex');
+function deletePayment(paymentId) {
+  if (window.confirm("Delete this payment record?")) {
+    Database.deletePayment(paymentId);
+    renderPaymentsTable();
+  }
 }
 
-// Close Delete Modal
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.add('hidden');
-    document.getElementById('deleteModal').classList.remove('flex');
-    document.getElementById('deletePaymentId').value = '';
-}
-
-// Confirm Delete Payment
-function confirmDeletePayment() {
-    const paymentId = document.getElementById('deletePaymentId').value;
-    
-    if (paymentId) {
-        Database.delete('hotel_payments', paymentId);
-        loadPayments();
-        loadPaymentSummary();
-    }
-    
-    closeDeleteModal();
-}
-
-// Close modals when clicking outside
-document.getElementById('paymentModal').addEventListener('click', function(event) {
-    if (event.target === this) {
-        closePaymentModal();
-    }
-});
-
-document.getElementById('deleteModal').addEventListener('click', function(event) {
-    if (event.target === this) {
-        closeDeleteModal();
-    }
-});
+renderPaymentsPage();

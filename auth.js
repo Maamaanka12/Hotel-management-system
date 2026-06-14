@@ -1,146 +1,102 @@
-// auth.js - Login and Registration Logic
+/*
+ * auth.js
+ * Handles staff login and registration using the Database (localStorage) layer.
+ */
 
-// Check if user is already logged in
-if (localStorage.getItem('hotel_currentUser')) {
-    window.location.href = 'dashboard.html';
+const loginTabButton = document.getElementById("loginTabButton");
+const registerTabButton = document.getElementById("registerTabButton");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+const authMessage = document.getElementById("authMessage");
+
+// If a user is already logged in, skip straight to the dashboard.
+if (Database.getCurrentUser()) {
+  window.location.href = "dashboard.html";
 }
 
-// Tab Switching
-function switchTab(tab) {
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const loginTabBtn = document.getElementById('loginTabBtn');
-    const registerTabBtn = document.getElementById('registerTabBtn');
-
-    if (tab === 'login') {
-        loginForm.classList.remove('hidden');
-        registerForm.classList.add('hidden');
-        loginTabBtn.classList.add('bg-hotel-primary', 'text-white');
-        loginTabBtn.classList.remove('text-gray-600', 'hover:text-hotel-primary');
-        registerTabBtn.classList.remove('bg-hotel-primary', 'text-white');
-        registerTabBtn.classList.add('text-gray-600', 'hover:text-hotel-primary');
-    } else {
-        registerForm.classList.remove('hidden');
-        loginForm.classList.add('hidden');
-        registerTabBtn.classList.add('bg-hotel-primary', 'text-white');
-        registerTabBtn.classList.remove('text-gray-600', 'hover:text-hotel-primary');
-        loginTabBtn.classList.remove('bg-hotel-primary', 'text-white');
-        loginTabBtn.classList.add('text-gray-600', 'hover:text-hotel-primary');
-    }
-    
-    hideAlert();
+function showMessage(text, isError) {
+  authMessage.textContent = text;
+  authMessage.classList.remove("hidden", "bg-red-50", "text-red-700", "bg-green-50", "text-green-700");
+  if (isError) {
+    authMessage.classList.add("bg-red-50", "text-red-700");
+  } else {
+    authMessage.classList.add("bg-green-50", "text-green-700");
+  }
 }
 
-// Show alert message
-function showAlert(message, type = 'error') {
-    const alertDiv = document.getElementById('alertMessage');
-    alertDiv.className = 'mt-4 p-4 rounded-lg text-white text-center font-semibold ' + 
-                        (type === 'error' ? 'bg-red-500' : 'bg-green-500');
-    alertDiv.textContent = message;
-    alertDiv.classList.remove('hidden');
-    
-    setTimeout(() => {
-        alertDiv.classList.add('hidden');
-    }, 5000);
+function activateLoginTab() {
+  loginForm.classList.remove("hidden");
+  registerForm.classList.add("hidden");
+  loginTabButton.classList.add("bg-white", "text-slate-900", "shadow-sm");
+  loginTabButton.classList.remove("text-slate-500");
+  registerTabButton.classList.remove("bg-white", "text-slate-900", "shadow-sm");
+  registerTabButton.classList.add("text-slate-500");
+  authMessage.classList.add("hidden");
 }
 
-function hideAlert() {
-    document.getElementById('alertMessage').classList.add('hidden');
+function activateRegisterTab() {
+  registerForm.classList.remove("hidden");
+  loginForm.classList.add("hidden");
+  registerTabButton.classList.add("bg-white", "text-slate-900", "shadow-sm");
+  registerTabButton.classList.remove("text-slate-500");
+  loginTabButton.classList.remove("bg-white", "text-slate-900", "shadow-sm");
+  loginTabButton.classList.add("text-slate-500");
+  authMessage.classList.add("hidden");
 }
 
-// Handle Login
-function handleLogin(event) {
-    event.preventDefault();
+loginTabButton.addEventListener("click", activateLoginTab);
+registerTabButton.addEventListener("click", activateRegisterTab);
 
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
+/* ---------- Login ---------- */
+loginForm.addEventListener("submit", function (event) {
+  event.preventDefault();
 
-    // Validate required fields
-    if (!email || !password) {
-        showAlert('Please fill in all fields', 'error');
-        return false;
-    }
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
 
-    // Get users from database
-    const users = Database.getAll('hotel_users');
-    const user = users.find(u => u.email === email && u.password === password);
+  if (!email || !password) {
+    showMessage("Please fill in both email and password.", true);
+    return;
+  }
 
-    if (!user) {
-        showAlert('Invalid email or password', 'error');
-        return false;
-    }
+  const existingUser = Database.findUserByEmail(email);
+  if (!existingUser || existingUser.password !== password) {
+    showMessage("Invalid email or password.", true);
+    return;
+  }
 
-    // Store current user session
-    const currentUser = {
-        id: user.id,
-        name: user.name,
-        email: user.email
-    };
-    localStorage.setItem('hotel_currentUser', JSON.stringify(currentUser));
+  Database.setCurrentUser(existingUser);
+  window.location.href = "dashboard.html";
+});
 
-    // Redirect to dashboard
-    window.location.href = 'dashboard.html';
-    return false;
-}
+/* ---------- Register ---------- */
+registerForm.addEventListener("submit", function (event) {
+  event.preventDefault();
 
-// Handle Registration
-function handleRegister(event) {
-    event.preventDefault();
+  const name = document.getElementById("registerName").value.trim();
+  const email = document.getElementById("registerEmail").value.trim();
+  const password = document.getElementById("registerPassword").value;
 
-    const name = document.getElementById('registerName').value.trim();
-    const email = document.getElementById('registerEmail').value.trim();
-    const password = document.getElementById('registerPassword').value.trim();
-    const confirmPassword = document.getElementById('registerConfirmPassword').value.trim();
+  if (!name || !email || !password) {
+    showMessage("Please fill in all fields.", true);
+    return;
+  }
 
-    // Validate required fields
-    if (!name || !email || !password || !confirmPassword) {
-        showAlert('Please fill in all fields', 'error');
-        return false;
-    }
+  if (password.length < 4) {
+    showMessage("Password must be at least 4 characters.", true);
+    return;
+  }
 
-    // Validate password length
-    if (password.length < 6) {
-        showAlert('Password must be at least 6 characters', 'error');
-        return false;
-    }
+  // Validation: prevent duplicate email accounts.
+  if (Database.findUserByEmail(email)) {
+    showMessage("An account with this email already exists.", true);
+    return;
+  }
 
-    // Validate password match
-    if (password !== confirmPassword) {
-        showAlert('Passwords do not match', 'error');
-        return false;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        showAlert('Please enter a valid email address', 'error');
-        return false;
-    }
-
-    // Check if email already exists
-    const existingUser = Database.getOneByField('hotel_users', 'email', email);
-    if (existingUser) {
-        showAlert('An account with this email already exists', 'error');
-        return false;
-    }
-
-    // Create user
-    const newUser = {
-        name: name,
-        email: email,
-        password: password,
-        role: 'staff'
-    };
-
-    Database.add('hotel_users', newUser);
-    
-    showAlert('Account created successfully! Please sign in.', 'success');
-    
-    // Clear form and switch to login
-    document.getElementById('registerFormElement').reset();
-    setTimeout(() => {
-        switchTab('login');
-    }, 1500);
-
-    return false;
-}
+  const newUser = Database.addUser({ name: name, email: email, password: password });
+  Database.setCurrentUser(newUser);
+  showMessage("Account created! Redirecting...", false);
+  setTimeout(function () {
+    window.location.href = "dashboard.html";
+  }, 700);
+});

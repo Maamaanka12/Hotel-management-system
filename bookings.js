@@ -1,346 +1,287 @@
-// bookings.js - Booking Management CRUD Operations with Validations
+/*
+ * bookings.js
+ * CRUD for bookings. Fields: Customer, Room, Check-In, Check-Out, Status.
+ *
+ * Key behaviors:
+ *  - An "Active" booking flips the chosen room's status to "Booked".
+ *  - Check-In cannot be in the past; Check-Out must be after Check-In.
+ *  - A customer with an existing "Active" booking cannot start another.
+ *  - After saving, the staff member is sent to Payments with the booking
+ *    pre-selected so booking + payment are handled together.
+ */
 
-// Check authentication
-const currentUser = JSON.parse(localStorage.getItem('hotel_currentUser'));
-if (!currentUser) {
-    window.location.href = 'index.html';
+buildLayout();
+
+let editingBookingId = null;
+
+function todayDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
 }
 
-// Display current user name
-document.getElementById('currentUserName').textContent = `👤 ${currentUser.name}`;
+function renderBookingsPage() {
+  const content =
+    '<div class="mb-5 flex items-center justify-between">' +
+    '<p class="text-sm text-slate-500">Manage room bookings</p>' +
+    '<button id="addBookingButton" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700">+ New Booking</button>' +
+    "</div>" +
+    '<div id="bookingsTableContainer" class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"></div>' +
+    buildBookingModalShell();
 
-// Current active filter
-let currentFilter = 'All';
+  document.getElementById("pageContent").innerHTML = content;
 
-// Logout function
-function handleLogout() {
-    localStorage.removeItem('hotel_currentUser');
-    window.location.href = 'index.html';
+  document.getElementById("addBookingButton").addEventListener("click", function () {
+    openBookingModal(null);
+  });
+  document.getElementById("bookingModalCloseButton").addEventListener("click", closeBookingModal);
+  document.getElementById("bookingModalCancelButton").addEventListener("click", closeBookingModal);
+  document.getElementById("bookingForm").addEventListener("submit", saveBooking);
+
+  renderBookingsTable();
 }
 
-// Load bookings on page load
-document.addEventListener('DOMContentLoaded', () => {
-    loadBookings();
-    populateCustomerDropdown();
-    populateRoomDropdown();
-});
-
-// Populate customer dropdown
-function populateCustomerDropdown() {
-    const customers = Database.getAll('hotel_customers');
-    const customerSelect = document.getElementById('bookingCustomer');
-    
-    customerSelect.innerHTML = '<option value="">Choose a customer</option>' +
-        customers.map(customer => 
-            `<option value="${customer.id}">${customer.name} (${customer.email})</option>`
-        ).join('');
+function buildBookingModalShell() {
+  return (
+    '<div id="bookingModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/40 p-4">' +
+    '<div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">' +
+    '<div class="mb-4 flex items-center justify-between">' +
+    '<h2 id="bookingModalTitle" class="text-lg font-semibold text-slate-900">New Booking</h2>' +
+    '<button id="bookingModalCloseButton" class="text-slate-400 hover:text-slate-600">&times;</button>' +
+    "</div>" +
+    '<form id="bookingForm" class="space-y-4">' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Customer</label>' +
+    '<select id="bookingCustomer" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"></select></div>' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Room</label>' +
+    '<select id="bookingRoom" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"></select></div>' +
+    '<div class="grid grid-cols-2 gap-3">' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Check-In</label>' +
+    '<input type="date" id="bookingCheckIn" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" /></div>' +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Check-Out</label>' +
+    '<input type="date" id="bookingCheckOut" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" /></div>' +
+    "</div>" +
+    '<div><label class="mb-1 block text-sm font-medium text-slate-700">Status</label>' +
+    '<select id="bookingStatus" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">' +
+    '<option value="Active">Active</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></div>' +
+    '<p id="bookingError" class="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>' +
+    '<p class="rounded-lg bg-teal-50 px-3 py-2 text-xs text-teal-700">After saving, you will be taken to Payments to record this booking\u2019s payment.</p>' +
+    '<div class="flex justify-end gap-3 pt-1">' +
+    '<button type="button" id="bookingModalCancelButton" class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">Cancel</button>' +
+    '<button type="submit" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">Save & Continue to Payment</button>' +
+    "</div>" +
+    "</form>" +
+    "</div>" +
+    "</div>"
+  );
 }
 
-// Populate room dropdown
-function populateRoomDropdown() {
-    const rooms = Database.getAll('hotel_rooms');
-    const roomSelect = document.getElementById('bookingRoom');
-    
-    roomSelect.innerHTML = '<option value="">Choose a room</option>' +
-        rooms.map(room => 
-            `<option value="${room.id}">Room ${room.roomNumber} - ${room.roomType} (${room.status})</option>`
-        ).join('');
-}
+function populateSelectOptions() {
+  const customers = Database.getCustomers();
+  const rooms = Database.getRooms();
 
-// Load and display bookings
-function loadBookings() {
-    const bookings = Database.getAll('hotel_bookings');
-    const customers = Database.getAll('hotel_customers');
-    const rooms = Database.getAll('hotel_rooms');
-    const tableBody = document.getElementById('bookingsTableBody');
+  const customerSelect = document.getElementById("bookingCustomer");
+  const roomSelect = document.getElementById("bookingRoom");
 
-    // Apply filter
-    let filteredBookings = bookings;
-    if (currentFilter !== 'All') {
-        filteredBookings = bookings.filter(booking => booking.status === currentFilter);
-    }
+  customerSelect.innerHTML =
+    '<option value="">Select customer...</option>' +
+    customers
+      .map(function (customer) {
+        return '<option value="' + customer.id + '">' + customer.name + "</option>";
+      })
+      .join("");
 
-    // Sort by creation date (newest first)
-    filteredBookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    if (filteredBookings.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center py-8 text-gray-500">
-                    No ${currentFilter !== 'All' ? currentFilter.toLowerCase() : ''} bookings found.
-                </td>
-            </tr>`;
-        return;
-    }
-
-    tableBody.innerHTML = filteredBookings.map(booking => {
-        const customer = customers.find(c => c.id === booking.customerId);
-        const room = rooms.find(r => r.id === booking.roomId);
-        
-        const customerName = customer ? customer.name : 'Unknown Customer';
-        const roomNumber = room ? room.roomNumber : 'Unknown Room';
-        const statusClass = getBookingStatusClass(booking.status);
-
-        return `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition duration-150">
-                <td class="px-6 py-4 text-gray-800 font-semibold">${customerName}</td>
-                <td class="px-6 py-4 text-gray-600">Room ${roomNumber}</td>
-                <td class="px-6 py-4 text-gray-600">${formatDate(booking.checkInDate)}</td>
-                <td class="px-6 py-4 text-gray-600">${formatDate(booking.checkOutDate)}</td>
-                <td class="px-6 py-4">
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${statusClass}">
-                        ${booking.status}
-                    </span>
-                </td>
-                <td class="px-6 py-4">
-                    <div class="flex space-x-2">
-                        <button onclick="openEditBookingModal('${booking.id}')" 
-                                class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition duration-200 text-sm">
-                            ✏️
-                        </button>
-                        <button onclick="openDeleteBookingModal('${booking.id}')" 
-                                class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition duration-200 text-sm">
-                            🗑️
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-// Filter bookings by status
-function filterBookingsByStatus(status) {
-    currentFilter = status;
-    
-    // Update filter button styles
-    const filterButtons = ['All', 'Active', 'Pending', 'Completed', 'Cancelled'];
-    filterButtons.forEach(filter => {
-        const button = document.getElementById(`filter${filter}`);
-        if (filter === status) {
-            button.classList.remove('bg-white', 'text-gray-600', 'hover:bg-gray-100');
-            button.classList.add('bg-hotel-primary', 'text-white');
-        } else {
-            button.classList.remove('bg-hotel-primary', 'text-white');
-            button.classList.add('bg-white', 'text-gray-600', 'hover:bg-gray-100');
-        }
-    });
-    
-    loadBookings();
-}
-
-// Get booking status CSS class
-function getBookingStatusClass(status) {
-    switch(status) {
-        case 'Active':
-            return 'bg-green-100 text-green-700';
-        case 'Completed':
-            return 'bg-blue-100 text-blue-700';
-        case 'Cancelled':
-            return 'bg-red-100 text-red-700';
-        case 'Pending':
-            return 'bg-yellow-100 text-yellow-700';
-        default:
-            return 'bg-gray-100 text-gray-700';
-    }
-}
-
-// Format date for display
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-}
-
-// Open Add Booking Modal
-function openAddBookingModal() {
-    document.getElementById('modalTitle').textContent = 'New Booking';
-    document.getElementById('bookingId').value = '';
-    document.getElementById('bookingForm').reset();
-    populateCustomerDropdown();
-    populateRoomDropdown();
-    document.getElementById('bookingModal').classList.remove('hidden');
-    document.getElementById('bookingModal').classList.add('flex');
-}
-
-// Open Edit Booking Modal
-function openEditBookingModal(bookingId) {
-    const booking = Database.getById('hotel_bookings', bookingId);
-    if (!booking) return;
-
-    document.getElementById('modalTitle').textContent = 'Edit Booking';
-    document.getElementById('bookingId').value = booking.id;
-    
-    populateCustomerDropdown();
-    populateRoomDropdown();
-    
-    document.getElementById('bookingCustomer').value = booking.customerId;
-    document.getElementById('bookingRoom').value = booking.roomId;
-    document.getElementById('bookingCheckIn').value = booking.checkInDate;
-    document.getElementById('bookingCheckOut').value = booking.checkOutDate;
-    document.getElementById('bookingStatus').value = booking.status;
-    
-    document.getElementById('bookingModal').classList.remove('hidden');
-    document.getElementById('bookingModal').classList.add('flex');
-}
-
-// Close Booking Modal
-function closeBookingModal() {
-    document.getElementById('bookingModal').classList.add('hidden');
-    document.getElementById('bookingModal').classList.remove('flex');
-    document.getElementById('bookingForm').reset();
-}
-
-// Validate booking dates
-function validateBookingDates(checkInDate, checkOutDate) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const checkIn = new Date(checkInDate);
-    checkIn.setHours(0, 0, 0, 0);
-    
-    const checkOut = new Date(checkOutDate);
-    checkOut.setHours(0, 0, 0, 0);
-
-    // Check-in date cannot be in the past
-    if (checkIn < today) {
-        return { valid: false, message: 'Check-In date cannot be in the past.' };
-    }
-
-    // Check-Out date must be strictly after Check-In date
-    if (checkOut <= checkIn) {
-        return { valid: false, message: 'Check-Out date must be after Check-In date.' };
-    }
-
-    return { valid: true };
-}
-
-// Check if customer already has an active booking
-function hasActiveBooking(customerId, excludeBookingId = null) {
-    const bookings = Database.getAll('hotel_bookings');
-    return bookings.some(booking => 
-        booking.customerId === customerId && 
-        booking.status === 'Active' && 
-        booking.id !== excludeBookingId
-    );
-}
-
-// Handle Save Booking (Add or Edit)
-function handleSaveBooking(event) {
-    event.preventDefault();
-
-    const bookingId = document.getElementById('bookingId').value;
-    const customerId = document.getElementById('bookingCustomer').value;
-    const roomId = document.getElementById('bookingRoom').value;
-    const checkInDate = document.getElementById('bookingCheckIn').value;
-    const checkOutDate = document.getElementById('bookingCheckOut').value;
-    const status = document.getElementById('bookingStatus').value;
-
-    // Validate all required fields
-    if (!customerId || !roomId || !checkInDate || !checkOutDate || !status) {
-        alert('Please fill in all required fields.');
-        return false;
-    }
-
-    // Validate dates
-    const dateValidation = validateBookingDates(checkInDate, checkOutDate);
-    if (!dateValidation.valid) {
-        alert(dateValidation.message);
-        return false;
-    }
-
-    // Check if customer already has an active booking (when creating new or changing status to Active)
-    if (status === 'Active' && hasActiveBooking(customerId, bookingId)) {
-        alert('This customer already has an active booking. Cannot create another active booking.');
-        return false;
-    }
-
-    const bookingData = {
-        customerId: customerId,
-        roomId: roomId,
-        checkInDate: checkInDate,
-        checkOutDate: checkOutDate,
-        status: status
-    };
-
-    if (bookingId) {
-        // Update existing booking
-        Database.update('hotel_bookings', bookingId, bookingData);
-    } else {
-        // Add new booking
-        Database.add('hotel_bookings', bookingData);
-    }
-
-    // Update room status based on booking status
-    updateRoomStatus(roomId, status);
-
-    closeBookingModal();
-    loadBookings();
-    return false;
-}
-
-// Update room status when booking status changes
-function updateRoomStatus(roomId, bookingStatus) {
-    if (bookingStatus === 'Active') {
-        // Set room to Booked
-        Database.update('hotel_rooms', roomId, { status: 'Booked' });
-    } else if (bookingStatus === 'Completed' || bookingStatus === 'Cancelled') {
-        // Check if room has other active bookings
-        const bookings = Database.getAll('hotel_bookings');
-        const hasOtherActiveBooking = bookings.some(booking => 
-            booking.roomId === roomId && 
-            booking.status === 'Active'
+  roomSelect.innerHTML =
+    '<option value="">Select room...</option>' +
+    rooms
+      .map(function (room) {
+        return (
+          '<option value="' + room.id + '">Room ' + room.number + " (" + room.type + ") - " + room.status + "</option>"
         );
-        
-        if (!hasOtherActiveBooking) {
-            // Set room back to Available
-            Database.update('hotel_rooms', roomId, { status: 'Available' });
-        }
-    }
+      })
+      .join("");
 }
 
-// Open Delete Confirmation Modal
-function openDeleteBookingModal(bookingId) {
-    document.getElementById('deleteBookingId').value = bookingId;
-    document.getElementById('deleteModal').classList.remove('hidden');
-    document.getElementById('deleteModal').classList.add('flex');
+function renderBookingsTable() {
+  const bookings = Database.getBookings();
+  let rows = "";
+
+  if (bookings.length === 0) {
+    rows =
+      '<tr><td colspan="6" class="px-4 py-8 text-center text-sm text-slate-400">No bookings yet.</td></tr>';
+  } else {
+    rows = bookings
+      .map(function (booking) {
+        const customer = Database.getCustomerById(booking.customerId);
+        const room = Database.getRoomById(booking.roomId);
+        return (
+          '<tr class="border-t border-slate-100">' +
+          '<td class="px-4 py-3 text-sm font-medium text-slate-800">' + (customer ? customer.name : "Unknown") + "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' + (room ? room.number : "Unknown") + "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' + booking.checkIn + "</td>" +
+          '<td class="px-4 py-3 text-sm text-slate-700">' + booking.checkOut + "</td>" +
+          '<td class="px-4 py-3">' + statusBadge(booking.status) + "</td>" +
+          '<td class="px-4 py-3 text-right">' +
+          '<button data-pay="' + booking.id + '" class="mr-2 text-sm font-medium text-blue-600 hover:underline">Pay</button>' +
+          '<button data-edit="' + booking.id + '" class="mr-2 text-sm font-medium text-teal-600 hover:underline">Edit</button>' +
+          '<button data-delete="' + booking.id + '" class="text-sm font-medium text-red-600 hover:underline">Delete</button>' +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+  }
+
+  document.getElementById("bookingsTableContainer").innerHTML =
+    '<div class="overflow-x-auto"><table class="w-full min-w-[700px]">' +
+    '<thead><tr class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">' +
+    '<th class="px-4 py-3">Customer</th>' +
+    '<th class="px-4 py-3">Room</th>' +
+    '<th class="px-4 py-3">Check-In</th>' +
+    '<th class="px-4 py-3">Check-Out</th>' +
+    '<th class="px-4 py-3">Status</th>' +
+    '<th class="px-4 py-3 text-right">Actions</th>' +
+    "</tr></thead><tbody>" +
+    rows +
+    "</tbody></table></div>";
+
+  document.querySelectorAll("[data-pay]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      goToPayment(button.getAttribute("data-pay"));
+    });
+  });
+  document.querySelectorAll("[data-edit]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      openBookingModal(button.getAttribute("data-edit"));
+    });
+  });
+  document.querySelectorAll("[data-delete]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      deleteBooking(button.getAttribute("data-delete"));
+    });
+  });
 }
 
-// Close Delete Modal
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.add('hidden');
-    document.getElementById('deleteModal').classList.remove('flex');
-    document.getElementById('deleteBookingId').value = '';
+function openBookingModal(bookingId) {
+  // A booking needs both customers and rooms to exist first.
+  if (Database.getCustomers().length === 0 || Database.getRooms().length === 0) {
+    window.alert("Please add at least one customer and one room before creating a booking.");
+    return;
+  }
+
+  editingBookingId = bookingId;
+  populateSelectOptions();
+  document.getElementById("bookingError").classList.add("hidden");
+
+  const checkInInput = document.getElementById("bookingCheckIn");
+  // Prevent picking past dates in the date picker as well.
+  checkInInput.setAttribute("min", todayDateString());
+
+  if (bookingId) {
+    const booking = Database.getBookingById(bookingId);
+    document.getElementById("bookingModalTitle").textContent = "Edit Booking";
+    document.getElementById("bookingCustomer").value = booking.customerId;
+    document.getElementById("bookingRoom").value = booking.roomId;
+    checkInInput.value = booking.checkIn;
+    document.getElementById("bookingCheckOut").value = booking.checkOut;
+    document.getElementById("bookingStatus").value = booking.status;
+  } else {
+    document.getElementById("bookingModalTitle").textContent = "New Booking";
+    document.getElementById("bookingCustomer").value = "";
+    document.getElementById("bookingRoom").value = "";
+    checkInInput.value = "";
+    document.getElementById("bookingCheckOut").value = "";
+    document.getElementById("bookingStatus").value = "Active";
+  }
+
+  const modal = document.getElementById("bookingModal");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
-// Confirm Delete Booking
-function confirmDeleteBooking() {
-    const bookingId = document.getElementById('deleteBookingId').value;
-    
-    if (bookingId) {
-        const booking = Database.getById('hotel_bookings', bookingId);
-        
-        // If booking was active, release the room
-        if (booking && booking.status === 'Active') {
-            updateRoomStatus(booking.roomId, 'Cancelled');
-        }
-        
-        Database.delete('hotel_bookings', bookingId);
-        loadBookings();
-    }
-    
-    closeDeleteModal();
+function closeBookingModal() {
+  const modal = document.getElementById("bookingModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  editingBookingId = null;
 }
 
-// Close modals when clicking outside
-document.getElementById('bookingModal').addEventListener('click', function(event) {
-    if (event.target === this) {
-        closeBookingModal();
-    }
-});
+function saveBooking(event) {
+  event.preventDefault();
+  const errorElement = document.getElementById("bookingError");
 
-document.getElementById('deleteModal').addEventListener('click', function(event) {
-    if (event.target === this) {
-        closeDeleteModal();
-    }
-});
+  const customerId = document.getElementById("bookingCustomer").value;
+  const roomId = document.getElementById("bookingRoom").value;
+  const checkIn = document.getElementById("bookingCheckIn").value;
+  const checkOut = document.getElementById("bookingCheckOut").value;
+  const status = document.getElementById("bookingStatus").value;
+
+  function showError(message) {
+    errorElement.textContent = message;
+    errorElement.classList.remove("hidden");
+  }
+
+  // Validation: all fields required.
+  if (!customerId || !roomId || !checkIn || !checkOut) {
+    showError("Please fill in all fields.");
+    return;
+  }
+
+  // Validation: check-in cannot be in the past.
+  if (checkIn < todayDateString()) {
+    showError("Check-In date cannot be before today.");
+    return;
+  }
+
+  // Validation: check-out must be strictly after check-in.
+  if (checkOut <= checkIn) {
+    showError("Check-Out date must be after the Check-In date.");
+    return;
+  }
+
+  // Validation: a customer with an Active booking cannot start another Active one.
+  if (status === "Active" && Database.customerHasActiveBooking(customerId, editingBookingId)) {
+    showError("This customer already has an active booking and cannot book another room.");
+    return;
+  }
+
+  const bookingData = {
+    customerId: customerId,
+    roomId: roomId,
+    checkIn: checkIn,
+    checkOut: checkOut,
+    status: status,
+  };
+
+  let savedBookingId;
+  if (editingBookingId) {
+    Database.updateBooking(editingBookingId, bookingData);
+    savedBookingId = editingBookingId;
+  } else {
+    const created = Database.addBooking(bookingData);
+    savedBookingId = created.id;
+  }
+
+  // Logic: an Active booking marks the room as Booked.
+  if (status === "Active") {
+    Database.updateRoom(roomId, { status: "Booked" });
+  }
+
+  closeBookingModal();
+  // Redirect to Payments with the booking pre-selected.
+  goToPayment(savedBookingId);
+}
+
+function goToPayment(bookingId) {
+  window.location.href = "payments.html?bookingId=" + encodeURIComponent(bookingId);
+}
+
+function deleteBooking(bookingId) {
+  if (window.confirm("Delete this booking?")) {
+    Database.deleteBooking(bookingId);
+    renderBookingsTable();
+  }
+}
+
+renderBookingsPage();

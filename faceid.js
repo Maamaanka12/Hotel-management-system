@@ -1,253 +1,121 @@
-// faceid.js - Face ID Enrollment Simulation
+/*
+ * faceid.js
+ * Simulated Face ID check-in. Selecting a customer and pressing "Scan"
+ * runs a short simulated recognition animation, then marks the customer
+ * as checked in. This is a front-end simulation (no real camera/biometrics).
+ */
 
-// Check authentication
-const currentUser = JSON.parse(localStorage.getItem('hotel_currentUser'));
-if (!currentUser) {
-    window.location.href = 'index.html';
+buildLayout();
+
+let scanInProgress = false;
+
+function renderFaceIdPage() {
+  const content =
+    '<div class="mx-auto max-w-xl">' +
+    '<div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">' +
+    '<p class="mb-4 text-sm text-slate-500">Select a guest and scan to simulate a Face ID check-in.</p>' +
+    '<label class="mb-1 block text-sm font-medium text-slate-700">Guest</label>' +
+    '<select id="faceCustomer" class="mb-5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"></select>' +
+    '<div class="mb-5 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 py-10">' +
+    '<div id="faceScanCircle" class="flex h-28 w-28 items-center justify-center rounded-full bg-slate-200 text-slate-400 transition">' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2"/><path d="M4 16v2a2 2 0 0 0 2 2h2"/><path d="M16 4h2a2 2 0 0 1 2 2v2"/><path d="M16 20h2a2 2 0 0 0 2-2v-2"/><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M9.5 15a3.5 3.5 0 0 0 5 0"/></svg>' +
+    "</div>" +
+    '<p id="faceScanStatus" class="mt-4 text-sm font-medium text-slate-500">Ready to scan</p>' +
+    "</div>" +
+    '<button id="faceScanButton" class="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700">Start Face Scan</button>' +
+    "</div>" +
+    '<div id="checkedInContainer" class="mt-6"></div>' +
+    "</div>";
+
+  document.getElementById("pageContent").innerHTML = content;
+
+  populateFaceCustomers();
+  document.getElementById("faceScanButton").addEventListener("click", startScan);
+  renderCheckedInList();
 }
 
-// Display current user name
-document.getElementById('currentUserName').textContent = `👤 ${currentUser.name}`;
-
-// Global variables for scan simulation
-let scanInterval = null;
-let scanProgress = 0;
-let selectedCustomerId = null;
-
-// Logout function
-function handleLogout() {
-    localStorage.removeItem('hotel_currentUser');
-    window.location.href = 'index.html';
+function populateFaceCustomers() {
+  const customers = Database.getCustomers();
+  const select = document.getElementById("faceCustomer");
+  if (customers.length === 0) {
+    select.innerHTML = '<option value="">No customers registered yet</option>';
+  } else {
+    select.innerHTML =
+      '<option value="">Select guest...</option>' +
+      customers
+        .map(function (customer) {
+          return '<option value="' + customer.id + '">' + customer.name + "</option>";
+        })
+        .join("");
+  }
 }
 
-// Load data on page load
-document.addEventListener('DOMContentLoaded', () => {
-    populateCustomerDropdown();
-    loadEnrolledCustomers();
-});
+function startScan() {
+  if (scanInProgress) {
+    return;
+  }
+  const customerId = document.getElementById("faceCustomer").value;
+  if (!customerId) {
+    window.alert("Please select a guest to scan.");
+    return;
+  }
 
-// Populate customer dropdown
-function populateCustomerDropdown() {
-    const customers = Database.getAll('hotel_customers');
-    const customerSelect = document.getElementById('faceIdCustomerSelect');
-    
-    customerSelect.innerHTML = '<option value="">Choose a customer</option>' +
-        customers.map(customer => {
-            const enrolledBadge = customer.faceEnrolled ? ' ✅' : '';
-            return `<option value="${customer.id}">${customer.name}${enrolledBadge}</option>`;
-        }).join('');
+  scanInProgress = true;
+  const circle = document.getElementById("faceScanCircle");
+  const statusText = document.getElementById("faceScanStatus");
+  const button = document.getElementById("faceScanButton");
+
+  button.disabled = true;
+  button.classList.add("opacity-60");
+  circle.className =
+    "flex h-28 w-28 items-center justify-center rounded-full bg-teal-100 text-teal-600 ring-4 ring-teal-200 animate-pulse transition";
+  statusText.textContent = "Scanning...";
+  statusText.className = "mt-4 text-sm font-medium text-teal-600";
+
+  // Simulated recognition delay.
+  window.setTimeout(function () {
+    const customer = Database.getCustomerById(customerId);
+    Database.updateCustomer(customerId, { checkedIn: true, checkedInAt: new Date().toISOString() });
+
+    circle.className =
+      "flex h-28 w-28 items-center justify-center rounded-full bg-green-100 text-green-600 ring-4 ring-green-200 transition";
+    statusText.textContent = "Welcome, " + (customer ? customer.name : "Guest") + "! Check-in confirmed.";
+    statusText.className = "mt-4 text-sm font-medium text-green-600";
+
+    button.disabled = false;
+    button.classList.remove("opacity-60");
+    scanInProgress = false;
+
+    renderCheckedInList();
+  }, 2200);
 }
 
-// Handle customer selection
-function onCustomerSelect() {
-    const customerId = document.getElementById('faceIdCustomerSelect').value;
-    const customerDetails = document.getElementById('customerDetails');
-    const startScanBtn = document.getElementById('startScanBtn');
-    
-    if (!customerId) {
-        customerDetails.classList.add('hidden');
-        startScanBtn.disabled = true;
-        selectedCustomerId = null;
-        resetScanner();
-        return;
-    }
-    
-    const customer = Database.getById('hotel_customers', customerId);
-    if (!customer) return;
-    
-    selectedCustomerId = customerId;
-    
-    // Update customer details
-    document.getElementById('customerAvatar').textContent = customer.name.charAt(0).toUpperCase();
-    document.getElementById('customerDetailName').textContent = customer.name;
-    document.getElementById('customerDetailEmail').textContent = customer.email;
-    document.getElementById('customerDetailPhone').textContent = customer.phone;
-    document.getElementById('customerDetailId').textContent = customer.nationalId;
-    
-    const faceStatus = customer.faceEnrolled ? 
-        '<span class="text-green-600">✅ Enrolled</span>' : 
-        '<span class="text-red-600">❌ Not Enrolled</span>';
-    document.getElementById('customerDetailFaceStatus').innerHTML = faceStatus;
-    
-    customerDetails.classList.remove('hidden');
-    
-    // Enable/disable scan button based on enrollment status
-    if (customer.faceEnrolled) {
-        startScanBtn.disabled = true;
-        startScanBtn.textContent = '🔍 Already Enrolled';
-    } else {
-        startScanBtn.disabled = false;
-        startScanBtn.textContent = '🔍 Start Face Scan';
-    }
-    
-    resetScanner();
+function renderCheckedInList() {
+  const checkedIn = Database.getCustomers().filter(function (customer) {
+    return customer.checkedIn;
+  });
+
+  let body = "";
+  if (checkedIn.length === 0) {
+    body = '<p class="px-4 py-6 text-center text-sm text-slate-400">No guests checked in yet.</p>';
+  } else {
+    body = checkedIn
+      .map(function (customer) {
+        return (
+          '<div class="flex items-center justify-between border-t border-slate-100 px-4 py-3">' +
+          '<span class="text-sm font-medium text-slate-800">' + customer.name + "</span>" +
+          statusBadge("Yes") +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  document.getElementById("checkedInContainer").innerHTML =
+    '<div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">' +
+    '<div class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Checked-In Guests</div>' +
+    body +
+    "</div>";
 }
 
-// Load enrolled customers list
-function loadEnrolledCustomers() {
-    const customers = Database.getAll('hotel_customers');
-    const enrolledCustomers = customers.filter(customer => customer.faceEnrolled);
-    const enrolledList = document.getElementById('enrolledCustomersList');
-    
-    if (enrolledCustomers.length === 0) {
-        enrolledList.innerHTML = '<p class="text-gray-500 text-center py-4">No customers enrolled yet</p>';
-        return;
-    }
-    
-    enrolledList.innerHTML = enrolledCustomers.map(customer => `
-        <div class="flex items-center justify-between bg-green-50 rounded-lg p-3">
-            <div class="flex items-center">
-                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                    ${customer.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                    <p class="font-semibold text-gray-800">${customer.name}</p>
-                    <p class="text-xs text-gray-600">${customer.email}</p>
-                </div>
-            </div>
-            <span class="text-green-600 text-sm font-semibold">✅ Enrolled</span>
-        </div>
-    `).join('');
-}
-
-// Start face scanning simulation
-function startFaceScan() {
-    if (!selectedCustomerId) {
-        alert('Please select a customer first.');
-        return;
-    }
-    
-    const customer = Database.getById('hotel_customers', selectedCustomerId);
-    if (!customer) return;
-    
-    if (customer.faceEnrolled) {
-        alert('This customer is already enrolled in Face ID.');
-        return;
-    }
-    
-    // Reset previous state
-    resetScanner();
-    
-    // Show scanning overlay
-    const scanningOverlay = document.getElementById('scanningOverlay');
-    const cameraFeed = document.getElementById('cameraFeed');
-    const startScanBtn = document.getElementById('startScanBtn');
-    const resetScanBtn = document.getElementById('resetScanBtn');
-    
-    scanningOverlay.classList.remove('hidden');
-    cameraFeed.style.opacity = '0.5';
-    startScanBtn.disabled = true;
-    resetScanBtn.disabled = false;
-    
-    // Update camera feed to show face outline
-    document.getElementById('cameraFeed').innerHTML = `
-        <div class="text-center">
-            <div class="text-8xl mb-4">👤</div>
-            <p class="text-gray-400 text-lg">Face Detected</p>
-            <p class="text-gray-500 text-sm">Scanning in progress...</p>
-        </div>
-    `;
-    
-    // Start progress simulation
-    scanProgress = 0;
-    updateScanProgress();
-    
-    scanInterval = setInterval(() => {
-        scanProgress += 10;
-        updateScanProgress();
-        
-        if (scanProgress >= 100) {
-            completeFaceEnrollment();
-        }
-    }, 300);
-}
-
-// Update scan progress bar
-function updateScanProgress() {
-    const progressBar = document.getElementById('scanProgressBar');
-    const scanPercentage = document.getElementById('scanPercentage');
-    const scanningStatus = document.getElementById('scanningStatus');
-    
-    progressBar.style.width = scanProgress + '%';
-    scanPercentage.textContent = scanProgress + '%';
-    
-    if (scanProgress < 30) {
-        scanningStatus.textContent = 'Detecting face...';
-    } else if (scanProgress < 60) {
-        scanningStatus.textContent = 'Mapping features...';
-    } else if (scanProgress < 90) {
-        scanningStatus.textContent = 'Creating profile...';
-    } else {
-        scanningStatus.textContent = 'Finalizing...';
-    }
-}
-
-// Complete face enrollment
-function completeFaceEnrollment() {
-    // Stop the interval
-    clearInterval(scanInterval);
-    scanInterval = null;
-    
-    // Update customer in database
-    Database.update('hotel_customers', selectedCustomerId, { faceEnrolled: true });
-    
-    // Hide scanning overlay and show success
-    document.getElementById('scanningOverlay').classList.add('hidden');
-    document.getElementById('successOverlay').classList.remove('hidden');
-    
-    // Update UI
-    setTimeout(() => {
-        document.getElementById('successOverlay').classList.add('hidden');
-        resetScanner();
-        populateCustomerDropdown();
-        onCustomerSelect(); // Refresh details
-        loadEnrolledCustomers();
-        
-        // Reset buttons
-        document.getElementById('startScanBtn').disabled = true;
-        document.getElementById('startScanBtn').textContent = '🔍 Already Enrolled';
-        document.getElementById('resetScanBtn').disabled = true;
-    }, 2000);
-}
-
-// Reset scanner to initial state
-function resetScanner() {
-    // Stop any ongoing scan
-    if (scanInterval) {
-        clearInterval(scanInterval);
-        scanInterval = null;
-    }
-    
-    scanProgress = 0;
-    
-    // Hide overlays
-    document.getElementById('scanningOverlay').classList.add('hidden');
-    document.getElementById('successOverlay').classList.add('hidden');
-    
-    // Reset camera feed
-    document.getElementById('cameraFeed').style.opacity = '1';
-    document.getElementById('cameraFeed').innerHTML = `
-        <div class="text-center text-gray-400">
-            <div class="text-8xl mb-4">📷</div>
-            <p class="text-lg">Camera Feed</p>
-            <p class="text-sm">Select a customer to begin enrollment</p>
-        </div>
-    `;
-    
-    // Reset progress bar
-    document.getElementById('scanProgressBar').style.width = '0%';
-    document.getElementById('scanPercentage').textContent = '0%';
-    document.getElementById('scanningStatus').textContent = 'Scanning...';
-    
-    // Reset buttons
-    const resetScanBtn = document.getElementById('resetScanBtn');
-    resetScanBtn.disabled = true;
-    
-    if (selectedCustomerId) {
-        const customer = Database.getById('hotel_customers', selectedCustomerId);
-        if (customer && !customer.faceEnrolled) {
-            document.getElementById('startScanBtn').disabled = false;
-            document.getElementById('startScanBtn').textContent = '🔍 Start Face Scan';
-        }
-    }
-}
+renderFaceIdPage();

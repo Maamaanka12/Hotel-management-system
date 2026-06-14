@@ -1,111 +1,118 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hotel Management System - Login</title>
+<html lang="en" class="bg-slate-100">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Login | Grand Vista Hotel</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        hotel: {
-                            primary: '#1e3a5f',
-                            secondary: '#2d5a27',
-                            accent: '#c4a747',
-                            light: '#f4f1e8'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-gradient-to-br from-hotel-primary to-blue-900 min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="text-6xl mb-4">🏨</div>
-            <h1 class="text-3xl font-bold text-white mb-2">Grand Horizon Hotel</h1>
-            <p class="text-gray-300">Management System</p>
+  </head>
+  <body class="min-h-screen bg-slate-100 text-slate-800">
+    <div class="flex min-h-screen items-center justify-center px-4 py-10">
+      <div class="w-full max-w-md">
+        <!-- Brand -->
+        <div class="mb-8 text-center">
+          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-teal-600 text-2xl font-bold text-white">
+            GV
+          </div>
+          <h1 class="text-2xl font-bold text-slate-900">Grand Vista Hotel</h1>
+          <p class="text-sm text-slate-500">Hotel Management System</p>
         </div>
 
-        <!-- Tab Buttons -->
-        <div class="flex mb-6 bg-white rounded-lg p-1 shadow-lg">
-            <button id="loginTabBtn" onclick="switchTab('login')" 
-                    class="flex-1 py-3 px-4 rounded-md font-semibold transition-all duration-300 bg-hotel-primary text-white">
-                Sign In
+        <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+          <!-- Tabs -->
+          <div class="mb-6 flex rounded-lg bg-slate-100 p-1">
+            <button
+              id="loginTabButton"
+              type="button"
+              class="flex-1 rounded-md bg-white py-2 text-sm font-medium text-slate-900 shadow-sm"
+            >
+              Login
             </button>
-            <button id="registerTabBtn" onclick="switchTab('register')" 
-                    class="flex-1 py-3 px-4 rounded-md font-semibold transition-all duration-300 text-gray-600 hover:text-hotel-primary">
-                Register
+            <button
+              id="registerTabButton"
+              type="button"
+              class="flex-1 rounded-md py-2 text-sm font-medium text-slate-500"
+            >
+              Register
             </button>
+          </div>
+
+          <!-- Login Form -->
+          <form id="loginForm" class="space-y-4">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-slate-700">Email</label>
+              <input
+                type="email"
+                id="loginEmail"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                placeholder="staff@hotel.com"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-medium text-slate-700">Password</label>
+              <input
+                type="password"
+                id="loginPassword"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                placeholder="••••••••"
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full rounded-lg bg-teal-600 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+            >
+              Sign In
+            </button>
+          </form>
+
+          <!-- Register Form -->
+          <form id="registerForm" class="hidden space-y-4">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-slate-700">Full Name</label>
+              <input
+                type="text"
+                id="registerName"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                placeholder="Jane Doe"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-medium text-slate-700">Email</label>
+              <input
+                type="email"
+                id="registerEmail"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                placeholder="staff@hotel.com"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-medium text-slate-700">Password</label>
+              <input
+                type="password"
+                id="registerPassword"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                placeholder="At least 4 characters"
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full rounded-lg bg-teal-600 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+            >
+              Create Account
+            </button>
+          </form>
+
+          <!-- Feedback message -->
+          <p id="authMessage" class="mt-4 hidden rounded-lg px-3 py-2 text-sm"></p>
         </div>
 
-        <!-- Login Form -->
-        <div id="loginForm" class="bg-white rounded-xl shadow-2xl p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Welcome Back</h2>
-            <form id="loginFormElement" onsubmit="handleLogin(event)" novalidate>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Email Address</label>
-                    <input type="email" id="loginEmail" required 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent"
-                           placeholder="staff@hotel.com">
-                </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
-                    <input type="password" id="loginPassword" required 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent"
-                           placeholder="••••••••">
-                </div>
-                <button type="submit" 
-                        class="w-full bg-hotel-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-900 transition duration-300">
-                    Sign In
-                </button>
-            </form>
-        </div>
-
-        <!-- Register Form -->
-        <div id="registerForm" class="bg-white rounded-xl shadow-2xl p-8 hidden">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Create Account</h2>
-            <form id="registerFormElement" onsubmit="handleRegister(event)" novalidate>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Full Name</label>
-                    <input type="text" id="registerName" required 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent"
-                           placeholder="John Doe">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Email Address</label>
-                    <input type="email" id="registerEmail" required 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent"
-                           placeholder="staff@hotel.com">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
-                    <input type="password" id="registerPassword" required minlength="6"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent"
-                           placeholder="Min 6 characters">
-                </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Confirm Password</label>
-                    <input type="password" id="registerConfirmPassword" required minlength="6"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-primary focus:border-transparent"
-                           placeholder="Confirm your password">
-                </div>
-                <button type="submit" 
-                        class="w-full bg-hotel-secondary text-white py-3 rounded-lg font-semibold hover:bg-green-800 transition duration-300">
-                    Create Account
-                </button>
-            </form>
-        </div>
-
-        <!-- Alert Message -->
-        <div id="alertMessage" class="mt-4 hidden"></div>
+        <p class="mt-6 text-center text-xs text-slate-400">
+          Data is stored locally in your browser.
+        </p>
+      </div>
     </div>
 
     <script src="database.js"></script>
     <script src="auth.js"></script>
-</body>
+  </body>
 </html>
