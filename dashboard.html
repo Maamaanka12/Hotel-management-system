@@ -1,19 +1,91 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-slate-100">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard | Grand Vista Hotel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body class="min-h-screen bg-slate-100 text-slate-800">
-    <script src="database.js"></script>
-    <script>
-      requireAuthentication();
-      window.PAGE_NAME = "dashboard";
-      window.PAGE_TITLE = "Dashboard";
-    </script>
-    <script src="layout.js"></script>
-    <script src="dashboard.js"></script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Grand Hotel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100">
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 z-40 hidden bg-black/50 lg:hidden"></div>
+
+  <div class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside id="sidebar-panel"
+           class="fixed inset-y-0 left-0 z-50 w-64 -translate-x-full transform bg-slate-800 transition-transform duration-300 lg:static lg:translate-x-0">
+      <div id="sidebar-navigation" class="h-full"></div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex flex-1 flex-col">
+      <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-4 lg:px-8">
+        <div class="flex items-center gap-4">
+          <button id="mobile-menu-toggle" class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <h2 class="text-xl font-bold text-slate-800">Dashboard</h2>
+        </div>
+        <p id="dashboard-date" class="text-sm text-slate-500"></p>
+      </header>
+
+      <main class="flex-1 p-4 lg:p-8">
+        <div id="alert-container"></div>
+
+        <!-- Statistics Cards -->
+        <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div class="rounded-xl bg-white p-6 shadow-sm border border-slate-200">
+            <p class="text-sm font-medium text-slate-500">Total Rooms</p>
+            <p id="stat-total-rooms" class="mt-2 text-3xl font-bold text-slate-800">0</p>
+          </div>
+          <div class="rounded-xl bg-white p-6 shadow-sm border border-slate-200">
+            <p class="text-sm font-medium text-slate-500">Available Rooms</p>
+            <p id="stat-available-rooms" class="mt-2 text-3xl font-bold text-green-600">0</p>
+          </div>
+          <div class="rounded-xl bg-white p-6 shadow-sm border border-slate-200">
+            <p class="text-sm font-medium text-slate-500">Booked Rooms</p>
+            <p id="stat-booked-rooms" class="mt-2 text-3xl font-bold text-indigo-600">0</p>
+          </div>
+          <div class="rounded-xl bg-white p-6 shadow-sm border border-slate-200">
+            <p class="text-sm font-medium text-slate-500">Total Customers</p>
+            <p id="stat-total-customers" class="mt-2 text-3xl font-bold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <!-- Recent Bookings -->
+        <div class="rounded-xl bg-white shadow-sm border border-slate-200">
+          <div class="border-b border-slate-200 px-6 py-4">
+            <h3 class="text-lg font-semibold text-slate-800">5 Most Recent Bookings</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th class="px-6 py-3">Customer</th>
+                  <th class="px-6 py-3">Room</th>
+                  <th class="px-6 py-3">Check-In</th>
+                  <th class="px-6 py-3">Check-Out</th>
+                  <th class="px-6 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody id="recent-bookings-table">
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-slate-400">No bookings yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/database.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
 </html>

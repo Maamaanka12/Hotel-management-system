@@ -1,19 +1,143 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-slate-100">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Payments | Grand Vista Hotel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body class="min-h-screen bg-slate-100 text-slate-800">
-    <script src="database.js"></script>
-    <script>
-      requireAuthentication();
-      window.PAGE_NAME = "payments";
-      window.PAGE_TITLE = "Payments";
-    </script>
-    <script src="layout.js"></script>
-    <script src="payments.js"></script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payments | Grand Hotel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100">
+
+  <div id="sidebar-overlay" class="fixed inset-0 z-40 hidden bg-black/50 lg:hidden"></div>
+
+  <div class="flex min-h-screen">
+    <aside id="sidebar-panel"
+           class="fixed inset-y-0 left-0 z-50 w-64 -translate-x-full transform bg-slate-800 transition-transform duration-300 lg:static lg:translate-x-0">
+      <div id="sidebar-navigation" class="h-full"></div>
+    </aside>
+
+    <div class="flex flex-1 flex-col">
+      <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-4 lg:px-8">
+        <div class="flex items-center gap-4">
+          <button id="mobile-menu-toggle" class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <h2 class="text-xl font-bold text-slate-800">Payments Management</h2>
+        </div>
+        <button id="open-add-payment-button"
+                class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+          + Add Payment
+        </button>
+      </header>
+
+      <main class="flex-1 p-4 lg:p-8">
+        <div id="alert-container"></div>
+
+        <!-- Banner shown when redirected from a new booking -->
+        <div id="new-booking-banner" class="mb-4 hidden rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800">
+          Booking saved successfully! Complete the payment below for this booking.
+        </div>
+
+        <div class="rounded-xl bg-white shadow-sm border border-slate-200">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th class="px-6 py-3">Booking Ref</th>
+                  <th class="px-6 py-3">Customer</th>
+                  <th class="px-6 py-3">Room</th>
+                  <th class="px-6 py-3">Amount</th>
+                  <th class="px-6 py-3">Method</th>
+                  <th class="px-6 py-3">Date</th>
+                  <th class="px-6 py-3">Status</th>
+                  <th class="px-6 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="payments-table-body">
+                <tr>
+                  <td colspan="8" class="px-6 py-8 text-center text-slate-400">No payments recorded yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add/Edit Payment Modal -->
+  <div id="payment-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+      <h3 id="payment-modal-title" class="mb-4 text-lg font-semibold text-slate-800">Add Payment</h3>
+      <form id="payment-form" class="space-y-4">
+        <input type="hidden" id="payment-edit-id">
+
+        <div>
+          <label for="payment-booking" class="mb-1 block text-sm font-medium text-slate-700">Booking Reference *</label>
+          <select id="payment-booking" required
+                  class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="">Select a booking</option>
+          </select>
+        </div>
+
+        <div id="payment-booking-details" class="hidden rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+          <p><span class="font-medium">Customer:</span> <span id="detail-customer-name">—</span></p>
+          <p><span class="font-medium">Room:</span> <span id="detail-room-number">—</span></p>
+          <p><span class="font-medium">Suggested Amount:</span> $<span id="detail-suggested-amount">0.00</span></p>
+        </div>
+
+        <div>
+          <label for="payment-amount" class="mb-1 block text-sm font-medium text-slate-700">Amount ($) *</label>
+          <input type="number" id="payment-amount" required min="0.01" step="0.01"
+                 class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+
+        <div>
+          <label for="payment-method" class="mb-1 block text-sm font-medium text-slate-700">Payment Method *</label>
+          <select id="payment-method" required
+                  class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="">Select method</option>
+            <option value="Cash">Cash</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="payment-date" class="mb-1 block text-sm font-medium text-slate-700">Payment Date *</label>
+          <input type="date" id="payment-date" required
+                 class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+
+        <div>
+          <label for="payment-status" class="mb-1 block text-sm font-medium text-slate-700">Status *</label>
+          <select id="payment-status" required
+                  class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+            <option value="Refunded">Refunded</option>
+          </select>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="submit"
+                  class="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
+            Save Payment
+          </button>
+          <button type="button" id="close-payment-modal-button"
+                  class="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/database.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/payments.js"></script>
+</body>
 </html>
