@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HMS — Payments</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold:    { DEFAULT: "#B8962E", light: "#D4AF54", dark: "#8A6E1A" },
+            surface: { DEFAULT: "#12172B", card: "#1A2040", sidebar: "#0E1322" },
+          },
+          fontFamily: {
+            display: ["Playfair Display", "serif"],
+            body:    ["Inter", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { font-family: "Inter", sans-serif; background: #0C0F1A; color: #e2e8f0; }
+    .nav-link { transition: background 0.15s ease, color 0.15s ease; }
+    .nav-link:hover { background: rgba(184,150,46,0.08); color: #D4AF54; }
+    .nav-link.active { background: rgba(184,150,46,0.12); color: #D4AF54; border-left: 3px solid #B8962E; }
+    .nav-link.active svg { color: #B8962E; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 20; }
+    .sidebar-overlay.visible { display: block; }
+    .input-field:focus { outline: none; border-color: #B8962E; box-shadow: 0 0 0 3px rgba(184,150,46,0.15); }
+    .table-row-hover:hover { background: rgba(255,255,255,0.03); }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0C0F1A; }
+    ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 3px; }
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-backdrop.open { display: flex; }
+    @keyframes modalSlideIn {
+      from { opacity: 0; transform: translateY(-16px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-box { animation: modalSlideIn 0.2s ease forwards; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+    .active-filter { background: rgba(184,150,46,0.15); color: #D4AF54; }
+  </style>
+</head>
+
+<body class="flex h-screen overflow-hidden">
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar"
+    class="fixed lg:static inset-y-0 left-0 z-30 w-64 flex flex-col flex-shrink-0 overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300"
+    style="background: #0E1322; border-right: 1px solid rgba(255,255,255,0.05);">
+
+    <div class="px-6 py-6 border-b" style="border-color: rgba(255,255,255,0.05);">
+      <p class="text-gold text-xs font-semibold tracking-[0.2em] uppercase">Staff Portal</p>
+      <h1 class="font-display text-white text-xl font-bold mt-1">Grand HMS</h1>
+    </div>
+
+    <nav class="flex-1 px-3 py-5 space-y-1">
+      <p class="text-slate-600 text-xs font-semibold uppercase tracking-widest px-3 mb-3">Main</p>
+      <a href="dashboard.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Dashboard
+      </a>
+      <a href="rooms.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        Rooms
+      </a>
+      <a href="customers.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Customers
+      </a>
+      <a href="bookings.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Bookings
+      </a>
+      <a href="payments.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        Payments
+      </a>
+      <p class="text-slate-600 text-xs font-semibold uppercase tracking-widest px-3 mt-5 mb-3">Smart Features</p>
+      <a href="faceid.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        Face ID
+      </a>
+    </nav>
+
+    <div class="px-4 py-4 border-t" style="border-color: rgba(255,255,255,0.05);">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
+          <span id="userInitial">?</span>
+        </div>
+        <div class="min-w-0">
+          <p id="userName" class="text-white text-sm font-medium truncate">Loading...</p>
+          <p id="userRole" class="text-slate-500 text-xs truncate">—</p>
+        </div>
+        <button onclick="handleLogout()" title="Sign Out" class="ml-auto text-slate-500 hover:text-red-400 transition-colors flex-shrink-0">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="flex items-center justify-between px-6 py-4 flex-shrink-0" style="background: #12172B; border-bottom: 1px solid rgba(255,255,255,0.05);">
+      <button onclick="openSidebar()" class="lg:hidden text-slate-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="hidden lg:block">
+        <h2 class="text-white font-semibold text-lg">Payments</h2>
+        <p class="text-slate-500 text-xs">Track all guest payments and transactions</p>
+      </div>
+      <button onclick="openAddModal()"
+        class="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+        style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Payment
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto px-6 py-6">
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="rounded-xl p-4 flex items-center gap-4" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(16,185,129,0.12);">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-slate-500 text-xs font-medium uppercase tracking-wider">Total Collected</p>
+            <p id="summaryTotalPaid" class="text-white text-xl font-bold mt-0.5">$0.00</p>
+          </div>
+        </div>
+        <div class="rounded-xl p-4 flex items-center gap-4" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(245,158,11,0.12);">
+            <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-slate-500 text-xs font-medium uppercase tracking-wider">Pending</p>
+            <p id="summaryTotalPending" class="text-white text-xl font-bold mt-0.5">$0.00</p>
+          </div>
+        </div>
+        <div class="rounded-xl p-4 flex items-center gap-4" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(184,150,46,0.12);">
+            <svg class="w-5 h-5 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          </div>
+          <div>
+            <p class="text-slate-500 text-xs font-medium uppercase tracking-wider">Total Records</p>
+            <p id="summaryTotalRecords" class="text-white text-xl font-bold mt-0.5">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter tabs + Table -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <h3 class="font-display text-white text-2xl font-bold">Payment Records</h3>
+        <div class="flex items-center gap-1 p-1 rounded-lg" style="background: #1A2040;">
+          <button onclick="setStatusFilter('All')"     id="filterAll"     class="filter-btn active-filter px-3 py-1.5 rounded-md text-xs font-medium transition-all">All</button>
+          <button onclick="setStatusFilter('Paid')"    id="filterPaid"    class="filter-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-400 hover:text-white">Paid</button>
+          <button onclick="setStatusFilter('Pending')" id="filterPending" class="filter-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-400 hover:text-white">Pending</button>
+          <button onclick="setStatusFilter('Refunded')" id="filterRefunded" class="filter-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-400 hover:text-white">Refunded</button>
+        </div>
+      </div>
+
+      <div class="rounded-xl overflow-hidden" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Booking / Customer</th>
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Amount</th>
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Method</th>
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3 hidden md:table-cell">Date</th>
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Status</th>
+                <th class="text-right text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="paymentsTableBody"></tbody>
+          </table>
+        </div>
+        <div id="paymentsEmptyState" class="hidden text-center py-16">
+          <svg class="w-12 h-12 text-slate-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          <p class="text-slate-400 text-sm font-medium">No payment records found</p>
+          <p class="text-slate-600 text-xs mt-1">Add a payment record using the button above.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ADD / EDIT PAYMENT MODAL -->
+  <div class="modal-backdrop" id="paymentModal" onclick="handleModalBackdropClick(event)">
+    <div class="modal-box w-full max-w-md rounded-xl shadow-2xl" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.08);">
+
+      <div class="flex items-center justify-between px-6 py-5 border-b" style="border-color: rgba(255,255,255,0.05);">
+        <h3 id="modalTitle" class="text-white font-semibold text-base">Add Payment</h3>
+        <button onclick="closeModal()" class="text-slate-500 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="px-6 py-5 space-y-4">
+        <div id="modalAlert" class="hidden px-4 py-3 rounded-lg text-sm font-medium"></div>
+
+        <!-- Booking Reference -->
+        <div>
+          <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Booking Reference <span class="text-red-400">*</span></label>
+          <select id="inputPaymentBooking"
+            class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all appearance-none"
+            style="background: #0E1322;">
+            <option value="">Select a booking...</option>
+          </select>
+        </div>
+
+        <!-- Amount -->
+        <div>
+          <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Amount ($) <span class="text-red-400">*</span></label>
+          <input type="number" id="inputPaymentAmount" readonly
+            class="input-field w-full px-4 py-2.5 rounded-lg text-white placeholder-slate-500 text-sm border border-white/10 transition-all"
+            style="background: #0E1322;" />
+        </div>
+
+        <!-- Method -->
+        <div>
+          <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Payment Method <span class="text-red-400">*</span></label>
+          <select id="inputPaymentMethod"
+            class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all appearance-none"
+            style="background: #0E1322;">
+            <option value="" disabled selected>Select method...</option>
+            <option value="Cash">Cash</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Mobile Money">Mobile Money</option>
+          </select>
+        </div>
+
+        <!-- Payment Date -->
+        <div>
+          <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Payment Date <span class="text-red-400">*</span></label>
+          <input type="date" id="inputPaymentDate"
+            class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all"
+            style="background: #0E1322; color-scheme: dark;" />
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Status <span class="text-red-400">*</span></label>
+          <select id="inputPaymentStatus"
+            class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all appearance-none"
+            style="background: #0E1322;">
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+            <option value="Refunded">Refunded</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t" style="border-color: rgba(255,255,255,0.05);">
+        <button onclick="closeModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">Cancel</button>
+        <button id="modalSaveButton" onclick="handleSavePayment()"
+          class="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+          style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
+          Save Payment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div class="modal-backdrop" id="deleteModal" onclick="handleDeleteBackdropClick(event)">
+    <div class="modal-box w-full max-w-sm rounded-xl shadow-2xl" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.08);">
+      <div class="px-6 py-6 text-center">
+        <div class="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </div>
+        <h3 class="text-white font-semibold text-base mb-2">Delete Payment</h3>
+        <p class="text-slate-400 text-sm">Are you sure you want to delete this payment record? This action cannot be undone.</p>
+      </div>
+      <div class="flex gap-3 px-6 pb-6">
+        <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all border border-white/10">Cancel</button>
+        <button onclick="confirmDeletePayment()" class="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-500 transition-all">Delete</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="api/api.js"></script>
+  <script src="common.js"></script>
+  <script src="payments.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HMS — Face ID</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold:    { DEFAULT: "#B8962E", light: "#D4AF54", dark: "#8A6E1A" },
+            surface: { DEFAULT: "#12172B", card: "#1A2040", sidebar: "#0E1322" },
+          },
+          fontFamily: {
+            display: ["Playfair Display", "serif"],
+            body:    ["Inter", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { font-family: "Inter", sans-serif; background: #0C0F1A; color: #e2e8f0; }
+    .nav-link { transition: background 0.15s ease, color 0.15s ease; }
+    .nav-link:hover { background: rgba(184,150,46,0.08); color: #D4AF54; }
+    .nav-link.active { background: rgba(184,150,46,0.12); color: #D4AF54; border-left: 3px solid #B8962E; }
+    .nav-link.active svg { color: #B8962E; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 20; }
+    .sidebar-overlay.visible { display: block; }
+    .input-field:focus { outline: none; border-color: #B8962E; box-shadow: 0 0 0 3px rgba(184,150,46,0.15); }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0C0F1A; }
+    ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 3px; }
+
+    /* Webcam viewfinder frame */
+    .viewfinder {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #0C0F1A;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Animated corner brackets on the scan frame */
+    .scan-frame {
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      pointer-events: none;
+    }
+    .scan-frame::before,
+    .scan-frame::after,
+    .scan-frame > span::before,
+    .scan-frame > span::after {
+      content: "";
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: #B8962E;
+      border-style: solid;
+    }
+    .scan-frame::before        { top: 0;    left: 0;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .scan-frame::after         { top: 0;    right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .scan-frame > span::before { bottom: 0; left: 0;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .scan-frame > span::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+    /* Scanning laser line animation */
+    @keyframes scanLine {
+      0%   { top: 10%; }
+      50%  { top: 85%; }
+      100% { top: 10%; }
+    }
+    .scan-laser {
+      position: absolute;
+      width: 160px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #B8962E, transparent);
+      left: 50%;
+      transform: translateX(-50%);
+      animation: scanLine 2s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(184,150,46,0.6);
+      display: none;
+    }
+    .scan-laser.active { display: block; }
+
+    /* Pulse ring on success */
+    @keyframes pulseRing {
+      0%   { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .pulse-ring {
+      animation: pulseRing 1s ease-out forwards;
+    }
+
+    /* State transition on the viewfinder border */
+    .viewfinder-idle    { border: 2px solid rgba(255,255,255,0.06); }
+    .viewfinder-scanning{ border: 2px solid rgba(184,150,46,0.5); }
+    .viewfinder-success { border: 2px solid rgba(16,185,129,0.6); }
+    .viewfinder-error   { border: 2px solid rgba(244,63,94,0.5); }
+  </style>
+</head>
+
+<body class="flex h-screen overflow-hidden">
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar"
+    class="fixed lg:static inset-y-0 left-0 z-30 w-64 flex flex-col flex-shrink-0 overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300"
+    style="background: #0E1322; border-right: 1px solid rgba(255,255,255,0.05);">
+    <div class="px-6 py-6 border-b" style="border-color: rgba(255,255,255,0.05);">
+      <p class="text-gold text-xs font-semibold tracking-[0.2em] uppercase">Staff Portal</p>
+      <h1 class="font-display text-white text-xl font-bold mt-1">Grand HMS</h1>
+    </div>
+    <nav class="flex-1 px-3 py-5 space-y-1">
+      <p class="text-slate-600 text-xs font-semibold uppercase tracking-widest px-3 mb-3">Main</p>
+      <a href="dashboard.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Dashboard
+      </a>
+      <a href="rooms.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        Rooms
+      </a>
+      <a href="customers.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Customers
+      </a>
+      <a href="bookings.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Bookings
+      </a>
+      <a href="payments.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        Payments
+      </a>
+      <p class="text-slate-600 text-xs font-semibold uppercase tracking-widest px-3 mt-5 mb-3">Smart Features</p>
+      <a href="faceid.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        Face ID
+      </a>
+    </nav>
+    <div class="px-4 py-4 border-t" style="border-color: rgba(255,255,255,0.05);">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
+          <span id="userInitial">?</span>
+        </div>
+        <div class="min-w-0">
+          <p id="userName" class="text-white text-sm font-medium truncate">Loading...</p>
+          <p id="userRole" class="text-slate-500 text-xs truncate">—</p>
+        </div>
+        <button onclick="handleLogout()" title="Sign Out" class="ml-auto text-slate-500 hover:text-red-400 transition-colors flex-shrink-0">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="flex items-center justify-between px-6 py-4 flex-shrink-0" style="background: #12172B; border-bottom: 1px solid rgba(255,255,255,0.05);">
+      <button onclick="openSidebar()" class="lg:hidden text-slate-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="hidden lg:block">
+        <h2 class="text-white font-semibold text-lg">Face ID</h2>
+        <p class="text-slate-500 text-xs">Enroll and verify customer face recognition</p>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto px-6 py-6">
+
+      <div class="mb-7">
+        <h3 class="font-display text-white text-2xl font-bold">Face ID Enrollment</h3>
+        <p class="text-slate-500 text-sm mt-1">Select a customer, then start the scan to enroll their face in the system.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- LEFT: Controls Panel -->
+        <div class="space-y-5">
+
+          <!-- Customer selector card -->
+          <div class="rounded-xl p-5" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+            <h4 class="text-white font-semibold text-sm mb-4">Select Customer</h4>
+
+            <div>
+              <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Customer</label>
+              <select id="faceCustomerSelect"
+                onchange="handleCustomerSelection()"
+                class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all appearance-none"
+                style="background: #0E1322;">
+                <option value="">Choose a customer to enroll...</option>
+              </select>
+            </div>
+
+            <!-- Selected customer info card -->
+            <div id="selectedCustomerCard" class="hidden mt-4 p-4 rounded-lg" style="background: #0E1322; border: 1px solid rgba(255,255,255,0.06);">
+              <div class="flex items-center gap-3">
+                <div id="selectedCustomerAvatar" class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                     style="background: linear-gradient(135deg, #1e3a5f, #2a5298);">?</div>
+                <div class="min-w-0">
+                  <p id="selectedCustomerName"  class="text-white font-semibold text-sm truncate">—</p>
+                  <p id="selectedCustomerEmail" class="text-slate-500 text-xs truncate">—</p>
+                </div>
+                <div id="selectedCustomerBadge" class="ml-auto flex-shrink-0"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scan controls card -->
+          <div class="rounded-xl p-5" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+            <h4 class="text-white font-semibold text-sm mb-1">Enrollment Controls</h4>
+            <p class="text-slate-500 text-xs mb-4">The scan simulates a real webcam face detection and takes ~3 seconds.</p>
+
+            <button id="startScanButton" onclick="startFaceScan()"
+              disabled
+              class="w-full py-3 rounded-lg text-sm font-semibold text-white transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              Start Face Scan
+            </button>
+
+            <!-- Status message -->
+            <div id="scanStatusMessage" class="hidden mt-4 px-4 py-3 rounded-lg text-sm font-medium"></div>
+          </div>
+
+          <!-- Enrolled customers list -->
+          <div class="rounded-xl p-5" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-white font-semibold text-sm">Enrolled Customers</h4>
+              <span id="enrolledCountBadge" class="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-900/40 text-emerald-400">0</span>
+            </div>
+            <div id="enrolledCustomersList" class="space-y-2">
+              <p class="text-slate-600 text-xs text-center py-4">No customers enrolled yet.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: Viewfinder Panel -->
+        <div class="space-y-5">
+
+          <div class="rounded-xl p-5" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+            <h4 class="text-white font-semibold text-sm mb-4">Camera Viewfinder</h4>
+
+            <!-- The viewfinder box -->
+            <div id="viewfinderBox" class="viewfinder viewfinder-idle rounded-xl">
+
+              <!-- Idle placeholder -->
+              <div id="viewfinderIdle" class="flex flex-col items-center gap-3 text-center px-8">
+                <svg class="w-14 h-14 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                </svg>
+                <p class="text-slate-500 text-sm">Select a customer and press<br><span class="text-gold">Start Face Scan</span> to begin</p>
+              </div>
+
+              <!-- Scanning state -->
+              <div id="viewfinderScanning" class="hidden flex-col items-center gap-4">
+                <!-- Simulated face silhouette -->
+                <div class="relative">
+                  <svg class="w-28 h-28 text-slate-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                  </svg>
+                  <!-- Scanning laser line -->
+                  <div class="scan-laser active" id="scanLaser"></div>
+                  <!-- Corner brackets frame -->
+                  <div class="scan-frame absolute inset-0 m-auto" style="width:112px;height:112px;"><span></span></div>
+                </div>
+                <p id="scanProgressText" class="text-gold text-sm font-medium animate-pulse">Initializing scan...</p>
+              </div>
+
+              <!-- Success state -->
+              <div id="viewfinderSuccess" class="hidden flex-col items-center gap-3">
+                <div class="relative">
+                  <div class="w-20 h-20 rounded-full flex items-center justify-center" style="background: rgba(16,185,129,0.15);">
+                    <svg class="w-10 h-10 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </div>
+                  <div class="absolute inset-0 rounded-full border-2 border-emerald-400 pulse-ring"></div>
+                </div>
+                <p class="text-emerald-400 font-semibold text-sm">Face Enrolled Successfully</p>
+                <p id="successCustomerName" class="text-white text-base font-bold">—</p>
+              </div>
+
+              <!-- Error state -->
+              <div id="viewfinderError" class="hidden flex-col items-center gap-3">
+                <div class="w-20 h-20 rounded-full flex items-center justify-center" style="background: rgba(244,63,94,0.15);">
+                  <svg class="w-10 h-10 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <p class="text-rose-400 font-semibold text-sm">Scan Failed</p>
+                <p class="text-slate-500 text-xs">No face detected. Please try again.</p>
+              </div>
+
+            </div>
+
+            <!-- Viewfinder status bar -->
+            <div class="mt-3 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div id="cameraIndicator" class="w-2 h-2 rounded-full bg-slate-600"></div>
+                <span id="cameraStatusLabel" class="text-slate-500 text-xs">Camera idle</span>
+              </div>
+              <span class="text-slate-600 text-xs">Simulated webcam</span>
+            </div>
+
+          </div>
+
+          <!-- Instructions card -->
+          <div class="rounded-xl p-5" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+            <h4 class="text-white font-semibold text-sm mb-3">How It Works</h4>
+            <ol class="space-y-2.5">
+              <li class="flex items-start gap-3">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style="background: rgba(184,150,46,0.15); color: #B8962E;">1</span>
+                <span class="text-slate-400 text-sm">Select a customer from the dropdown on the left.</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style="background: rgba(184,150,46,0.15); color: #B8962E;">2</span>
+                <span class="text-slate-400 text-sm">Ask the guest to face the camera directly and click <span class="text-gold">Start Face Scan</span>.</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style="background: rgba(184,150,46,0.15); color: #B8962E;">3</span>
+                <span class="text-slate-400 text-sm">The system scans for ~3 seconds. On success, the customer's Face ID status is saved.</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style="background: rgba(184,150,46,0.15); color: #B8962E;">4</span>
+                <span class="text-slate-400 text-sm">The customer can now use Face ID for future check-ins instead of a key card.</span>
+              </li>
+            </ol>
+            <p class="text-slate-600 text-xs mt-4 pt-4 border-t" style="border-color: rgba(255,255,255,0.05);">
+              In the full implementation, this connects to a Python + OpenCV backend via a REST API endpoint that performs real facial feature extraction and matching.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="api/api.js"></script>
+  <script src="common.js"></script>
+  <script src="faceid.js"></script>
+  
+</body>
+</html>

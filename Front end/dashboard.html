@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HMS — Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold:    { DEFAULT: "#B8962E", light: "#D4AF54", dark: "#8A6E1A" },
+            surface: { DEFAULT: "#12172B", card: "#1A2040", sidebar: "#0E1322", input: "#0C0F1A" },
+          },
+          fontFamily: {
+            display: ["Playfair Display", "serif"],
+            body:    ["Inter", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { font-family: "Inter", sans-serif; background: #0C0F1A; color: #e2e8f0; }
+
+    /* Sidebar link hover and active state */
+    .nav-link {
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .nav-link:hover {
+      background: rgba(184, 150, 46, 0.08);
+      color: #D4AF54;
+    }
+    .nav-link.active {
+      background: rgba(184, 150, 46, 0.12);
+      color: #D4AF54;
+      border-left: 3px solid #B8962E;
+    }
+    .nav-link.active svg { color: #B8962E; }
+
+    /* Stat card subtle top border */
+    .stat-card {
+      border-top: 2px solid transparent;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+    .stat-card.gold-accent  { border-top-color: #B8962E; }
+    .stat-card.green-accent { border-top-color: #10b981; }
+    .stat-card.blue-accent  { border-top-color: #3b82f6; }
+    .stat-card.rose-accent  { border-top-color: #f43f5e; }
+    .stat-card.purple-accent{ border-top-color: #8b5cf6; }
+    .stat-card.teal-accent  { border-top-color: #14b8a6; }
+
+    /* Mobile sidebar overlay */
+    .sidebar-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 20;
+    }
+    .sidebar-overlay.visible { display: block; }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0C0F1A; }
+    ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 3px; }
+
+    /* Table row hover */
+    .table-row-hover:hover { background: rgba(255,255,255,0.03); }
+  </style>
+</head>
+
+<body class="flex h-screen overflow-hidden">
+
+  <!-- ── Mobile Sidebar Overlay ──────────────────────────── -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- ================================================================ -->
+  <!-- SIDEBAR NAVIGATION                                               -->
+  <!-- ================================================================ -->
+  <aside
+    id="sidebar"
+    class="fixed lg:static inset-y-0 left-0 z-30 w-64 flex flex-col flex-shrink-0 overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300"
+    style="background: #0E1322; border-right: 1px solid rgba(255,255,255,0.05);"
+  >
+
+    <!-- Brand -->
+    <div class="px-6 py-6 border-b" style="border-color: rgba(255,255,255,0.05);">
+      <p class="text-gold text-xs font-semibold tracking-[0.2em] uppercase">Staff Portal</p>
+      <h1 class="font-display text-white text-xl font-bold mt-1">Grand HMS</h1>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 px-3 py-5 space-y-1">
+
+      <p class="text-slate-600 text-xs font-semibold uppercase tracking-widest px-3 mb-3">Main</p>
+
+      <a href="dashboard.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+        Dashboard
+      </a>
+
+      <a href="rooms.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+        Rooms
+      </a>
+
+      <a href="customers.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        Customers
+      </a>
+
+      <a href="bookings.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        Bookings
+      </a>
+
+      <a href="payments.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+        Payments
+      </a>
+
+      <p class="text-slate-600 text-xs font-semibold uppercase tracking-widest px-3 mt-5 mb-3">Smart Features</p>
+
+      <a href="faceid.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" /></svg>
+        Face ID
+      </a>
+
+    </nav>
+
+    <!-- Logged-in User Info -->
+    <div class="px-4 py-4 border-t" style="border-color: rgba(255,255,255,0.05);">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
+          <span id="userInitial">?</span>
+        </div>
+        <div class="min-w-0">
+          <p id="userName" class="text-white text-sm font-medium truncate">Loading...</p>
+          <p id="userRole" class="text-slate-500 text-xs truncate">—</p>
+        </div>
+        <button onclick="handleLogout()" title="Sign Out" class="ml-auto text-slate-500 hover:text-red-400 transition-colors flex-shrink-0">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ================================================================ -->
+  <!-- MAIN CONTENT AREA                                                -->
+  <!-- ================================================================ -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- ── Top Bar ───────────────────────────────────────── -->
+    <header class="flex items-center justify-between px-6 py-4 flex-shrink-0" style="background: #12172B; border-bottom: 1px solid rgba(255,255,255,0.05);">
+      <!-- Mobile menu button -->
+      <button onclick="openSidebar()" class="lg:hidden text-slate-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
+
+      <div class="hidden lg:block">
+        <h2 class="text-white font-semibold text-lg">Dashboard</h2>
+        <p class="text-slate-500 text-xs" id="currentDateDisplay">—</p>
+      </div>
+
+      <div class="flex items-center gap-3 ml-auto">
+        <span class="text-slate-400 text-sm hidden sm:block">Welcome, <span id="headerUserName" class="text-white font-medium">—</span></span>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
+          <span id="headerUserInitial">?</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Scrollable Page Body ───────────────────────────── -->
+    <div class="flex-1 overflow-y-auto px-6 py-6">
+
+      <!-- Page Title -->
+      <div class="mb-7">
+        <h3 class="font-display text-white text-2xl font-bold">Overview</h3>
+        <p class="text-slate-500 text-sm mt-1">Live snapshot of your hotel's current status.</p>
+      </div>
+
+      <!-- ── Statistics Grid ──────────────────────────────── -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
+
+        <!-- Total Rooms -->
+        <div class="stat-card gold-accent rounded-xl p-5" style="background: #1A2040;">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-slate-400 text-xs font-semibold uppercase tracking-widest">Total Rooms</p>
+              <p id="statTotalRooms" class="text-white text-3xl font-bold mt-2">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: rgba(184,150,46,0.12);">
+              <svg class="w-5 h-5 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+            </div>
+          </div>
+          <p class="text-slate-500 text-xs mt-3">Registered in the system</p>
+        </div>
+
+        <!-- Available Rooms -->
+        <div class="stat-card green-accent rounded-xl p-5" style="background: #1A2040;">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-slate-400 text-xs font-semibold uppercase tracking-widest">Available</p>
+              <p id="statAvailableRooms" class="text-white text-3xl font-bold mt-2">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: rgba(16,185,129,0.12);">
+              <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+          </div>
+          <p class="text-slate-500 text-xs mt-3">Ready for booking</p>
+        </div>
+
+        <!-- Booked Rooms -->
+        <div class="stat-card blue-accent rounded-xl p-5" style="background: #1A2040;">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-slate-400 text-xs font-semibold uppercase tracking-widest">Booked</p>
+              <p id="statBookedRooms" class="text-white text-3xl font-bold mt-2">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: rgba(59,130,246,0.12);">
+              <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+          </div>
+          <p class="text-slate-500 text-xs mt-3">Currently occupied</p>
+        </div>
+
+        <!-- Total Customers -->
+        <div class="stat-card purple-accent rounded-xl p-5" style="background: #1A2040;">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-slate-400 text-xs font-semibold uppercase tracking-widest">Customers</p>
+              <p id="statTotalCustomers" class="text-white text-3xl font-bold mt-2">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: rgba(139,92,246,0.12);">
+              <svg class="w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </div>
+          </div>
+          <p class="text-slate-500 text-xs mt-3">Registered guests</p>
+        </div>
+
+        <!-- Active Bookings -->
+        <div class="stat-card rose-accent rounded-xl p-5" style="background: #1A2040;">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-slate-400 text-xs font-semibold uppercase tracking-widest">Active Bookings</p>
+              <p id="statActiveBookings" class="text-white text-3xl font-bold mt-2">0</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: rgba(244,63,94,0.12);">
+              <svg class="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+          </div>
+          <p class="text-slate-500 text-xs mt-3">Currently checked in</p>
+        </div>
+
+        <!-- Total Revenue -->
+        <div class="stat-card teal-accent rounded-xl p-5" style="background: #1A2040;">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-slate-400 text-xs font-semibold uppercase tracking-widest">Revenue</p>
+              <p id="statTotalRevenue" class="text-white text-3xl font-bold mt-2">$0</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: rgba(20,184,166,0.12);">
+              <svg class="w-5 h-5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+          </div>
+          <p class="text-slate-500 text-xs mt-3">From completed payments</p>
+        </div>
+
+      </div>
+
+      <!-- ── Recent Bookings Table ──────────────────────── -->
+      <div class="rounded-xl overflow-hidden" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color: rgba(255,255,255,0.05);">
+          <div>
+            <h4 class="text-white font-semibold text-sm">Recent Bookings</h4>
+            <p class="text-slate-500 text-xs mt-0.5">The 5 most recently created bookings</p>
+          </div>
+          <a href="bookings.html" class="text-gold text-xs font-medium hover:text-gold-light transition-colors">
+            View all →
+          </a>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Customer</th>
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Room</th>
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Check-In</th>
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3 hidden md:table-cell">Check-Out</th>
+                <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentBookingsTableBody">
+              <!-- Populated by dashboard.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty state (shown when no bookings exist) -->
+        <div id="recentBookingsEmptyState" class="hidden text-center py-12">
+          <svg class="w-10 h-10 text-slate-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <p class="text-slate-500 text-sm">No bookings yet.</p>
+          <a href="bookings.html" class="text-gold text-xs mt-1 inline-block hover:underline">Create the first booking →</a>
+        </div>
+
+      </div>
+
+    </div><!-- end scrollable body -->
+  </main>
+
+
+  <script src="api/api.js"></script>
+  <script src="common.js"></script>
+  <script src="dashboard.js"></script>
+
+</body>
+</html>

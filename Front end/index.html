@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HMS — Staff Login</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Inter for body, Playfair Display for brand -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    // Extend Tailwind with custom design tokens for the HMS brand
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold:    { DEFAULT: "#B8962E", light: "#D4AF54", dark: "#8A6E1A" },
+            slate:   { 950: "#0C0F1A" },
+            surface: { DEFAULT: "#12172B", card: "#1A2040", input: "#0E1322" },
+          },
+          fontFamily: {
+            display: ["Playfair Display", "serif"],
+            body:    ["Inter", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { font-family: "Inter", sans-serif; }
+
+    /* Subtle animated gradient background */
+    .auth-background {
+      background: linear-gradient(135deg, #0C0F1A 0%, #12172B 50%, #0E1322 100%);
+      min-height: 100vh;
+    }
+
+    /* Gold accent line above card */
+    .card-accent::before {
+      content: "";
+      display: block;
+      height: 3px;
+      background: linear-gradient(90deg, #B8962E, #D4AF54, #B8962E);
+      border-radius: 3px 3px 0 0;
+    }
+
+    /* Custom focus ring using gold */
+    .input-field:focus {
+      outline: none;
+      border-color: #B8962E;
+      box-shadow: 0 0 0 3px rgba(184, 150, 46, 0.15);
+    }
+
+    /* Smooth tab underline animation */
+    .tab-indicator {
+      transition: transform 0.25s ease, width 0.25s ease;
+    }
+
+    /* Password toggle button */
+    .password-toggle {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Error shake animation */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+  </style>
+</head>
+
+<body class="auth-background flex items-center justify-center px-4 py-12">
+
+  <div class="w-full max-w-md">
+
+    <!-- ── Brand Header ─────────────────────────────────── -->
+    <div class="text-center mb-8">
+      <p class="text-gold text-xs font-semibold tracking-[0.25em] uppercase mb-2">Staff Portal</p>
+      <h1 class="font-display text-white text-4xl font-bold tracking-tight">
+        Grand HMS
+      </h1>
+      <p class="text-slate-400 text-sm mt-2">Hotel Management System</p>
+    </div>
+
+    <!-- ── Auth Card ─────────────────────────────────────── -->
+    <div class="card-accent rounded-xl overflow-hidden shadow-2xl" style="background: #1A2040;">
+
+      <!-- Tab Navigation -->
+      <div class="flex border-b border-white/5">
+        <button
+          id="loginTabButton"
+          onclick="switchTab('login')"
+          class="flex-1 py-4 text-sm font-medium transition-colors duration-200 text-white border-b-2 border-gold"
+        >
+          Sign In
+        </button>
+        <button
+          id="registerTabButton"
+          onclick="switchTab('register')"
+          class="flex-1 py-4 text-sm font-medium transition-colors duration-200 text-slate-400 border-b-2 border-transparent hover:text-slate-200"
+        > Create Account
+        </button>
+      </div>
+
+      <div class="p-8">
+
+        <!-- ── Alert Banner (hidden by default) ──────────── -->
+        <div
+          id="alertBanner"
+          class="hidden mb-5 px-4 py-3 rounded-lg text-sm font-medium"
+        ></div>
+
+        <!-- ======================================== -->
+        <!-- LOGIN FORM                               -->
+        <!-- ======================================== -->
+        <div id="loginForm">
+          <div class="space-y-5">
+
+            <!-- Email -->
+            <div>
+              <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="loginEmail"
+                placeholder="you@example.com"
+                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-slate-500 text-sm border border-white/10 transition-all duration-200"
+                style="background: #0E1322;"
+              />
+            </div>
+
+            <!-- Password -->
+            <div>
+              <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">
+                Password
+              </label>
+              <div class="relative">
+                <input
+                  type="password"
+                  id="loginPassword"
+                  placeholder="Enter your password"
+                  class="input-field w-full px-4 py-3 pr-12 rounded-lg text-white placeholder-slate-500 text-sm border border-white/10 transition-all duration-200"
+                  style="background: #0E1322;"
+                />
+                <button
+                  type="button"
+                  class="password-toggle absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gold transition-colors"
+                  onclick="togglePasswordVisibility('loginPassword', this)"
+                  aria-label="Toggle password visibility"
+                >
+                  <!-- Eye icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <button
+              onclick="handleLogin()"
+              class="w-full py-3 rounded-lg font-semibold text-sm text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] mt-2"
+              style="background: linear-gradient(135deg, #B8962E, #D4AF54);"
+            >
+              Sign In to Dashboard
+            </button>
+
+          </div>
+        </div>
+
+        <!-- ======================================== -->
+        <!-- REGISTER FORM                            -->
+        <!-- ======================================== -->
+        <div id="registerForm" class="hidden">
+          <div class="space-y-5">
+
+            <!-- Full Name -->
+            <div>
+              <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="registerName"
+                placeholder="e.g. John Smith"
+                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-slate-500 text-sm border border-white/10 transition-all duration-200"
+                style="background: #0E1322;"
+              />
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="registerEmail"
+                placeholder="you@example.com"
+                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-slate-500 text-sm border border-white/10 transition-all duration-200"
+                style="background: #0E1322;"
+              />
+            </div>
+
+            <!-- Role -->
+            <div>
+              <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">
+                Role
+              </label>
+              <select
+                id="registerRole"
+                class="input-field w-full px-4 py-3 rounded-lg text-white text-sm border border-white/10 transition-all duration-200 appearance-none"
+                style="background: #0E1322;"
+              >
+                <option value="" disabled selected>Select a role...</option>
+                <option value="Admin">Admin</option>
+                <option value="Receptionist">Receptionist</option>
+                <!-- <option value="Manager">Manager</option> -->
+              </select>
+            </div>
+
+            <!-- Password -->
+            <div>
+              <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">
+                Password
+              </label>
+              <div class="relative">
+                <input
+                  type="password"
+                  id="registerPassword"
+                  placeholder="Min. 6 characters"
+                  class="input-field w-full px-4 py-3 pr-12 rounded-lg text-white placeholder-slate-500 text-sm border border-white/10 transition-all duration-200"
+                  style="background: #0E1322;"
+                />
+                <button
+                  type="button"
+                  class="password-toggle absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gold transition-colors"
+                  onclick="togglePasswordVisibility('registerPassword', this)"
+                  aria-label="Toggle password visibility"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+              <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">
+                Confirm Password
+              </label>
+              <div class="relative">
+                <input
+                  type="password"
+                  id="registerConfirmPassword"
+                  placeholder="Repeat your password"
+                  class="input-field w-full px-4 py-3 pr-12 rounded-lg text-white placeholder-slate-500 text-sm border border-white/10 transition-all duration-200"
+                  style="background: #0E1322;"
+                />
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <button
+              onclick="handleRegister()"
+              class="w-full py-3 rounded-lg font-semibold text-sm text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] mt-2"
+              style="background: linear-gradient(135deg, #B8962E, #D4AF54);"
+            >
+              Create Staff Account
+            </button>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer note -->
+    <p class="text-center text-slate-600 text-xs mt-6">
+      HMS v1.0 &mdash; Staff access only. Unauthorized use is prohibited.
+    </p>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="api/api.js"></script>
+  <script src="common.js"></script>
+  <script src="auth.js"></script>
+
+</body>
+</html>
