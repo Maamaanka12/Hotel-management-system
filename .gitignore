@@ -48,3 +48,17 @@ uploads/
 face_data/
 embeddings/
 models/
+
+# Python virtual env
+.venv/
+.venv311/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+
+# Node
+node_modules/
