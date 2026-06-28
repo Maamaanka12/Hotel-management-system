@@ -134,17 +134,26 @@ document
 .trim();
 
 if (!fullName || !phone || !email) {
+  showAlertIn('modalAlert', 'Please fill in all required fields.', 'error');
+  return;
+}
 
- 
-showAlertIn(
-  'modalAlert',
-  'Please fill in all required fields.',
-  'error'
-);
+// Name: letters, spaces, hyphens, apostrophes only
+if (!/^[a-zA-Z\s'\-]+$/.test(fullName)) {
+  showAlertIn('modalAlert', 'Name must contain letters only.', 'error');
+  return;
+}
 
-return;
- 
+// Phone: digits only, optional leading +, 7–15 digits
+if (!/^\+?[0-9]{7,15}$/.test(phone)) {
+  showAlertIn('modalAlert', 'Phone must contain numbers only (7–15 digits).', 'error');
+  return;
+}
 
+// Email: basic format
+if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  showAlertIn('modalAlert', 'Enter a valid email address.', 'error');
+  return;
 }
 
 const payload = {

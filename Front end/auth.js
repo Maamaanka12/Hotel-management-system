@@ -53,7 +53,8 @@ async function handleLogin() {
   }
 
   try {
-    const result = await API.post('/auth/login', { email, password });
+    // const result = await API.post('/auth/login', { email, password });
+      const result = await API.post('/auth/login', { userName: email, password });
 
 
     const displayName = result.data.Full_Name || result.data.User_Name;
@@ -93,7 +94,8 @@ async function handleRegister() {
   }
 
   try {
-    const result = await API.post('/auth/register', { fullName, email, password, userRole: role });
+    // const result = await API.post('/auth/register', { fullName, email, password, userRole: role });
+    const result = await API.post('/auth/register', { userName: email, fullName, password, userRole: role });
 
     // redirect straight to dashboard
     setCurrentUser({

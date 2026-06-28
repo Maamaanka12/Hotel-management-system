@@ -71,14 +71,6 @@ application.use("/api/bookings", bookingsRouter);
 application.use("/api/payments", paymentsRouter);
 application.use("/api", faceIdRouter);
 
-// 
-
-application.use((request, response) => {
-    response.status(404).json({
-        success: false,
-        message: `Route not found: ${request.method} ${request.originalUrl}`
-    });
-});
 
 
 // 
@@ -92,6 +84,14 @@ application.get("/api/health", (request, response) => {
     });
 });
 
+// 
+
+application.use((request, response) => {
+    response.status(404).json({
+        success: false,
+        message: `Route not found: ${request.method} ${request.originalUrl}`
+    });
+});
 
 
 //

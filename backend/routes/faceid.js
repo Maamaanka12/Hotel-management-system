@@ -132,7 +132,7 @@ router.post("/guests/scan-face", async (request, response) => {
          * Build the child process command and arguments.
          * The guest ID is passed as a command-line argument to the Python script.
          */
-        const pythonCommand = "python";
+        const pythonCommand = path.join(__dirname, "..", ".venv311", "Scripts", "python.exe");
         const pythonArguments = ["face_scanner.py", String(guestId)];
 
         /**
