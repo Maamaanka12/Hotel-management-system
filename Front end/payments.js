@@ -87,7 +87,7 @@ function renderPaymentRows(payments) {
   tableBody.innerHTML = payments
     .map(
       (payment) => `
-      <tr class="table-row-hover" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+      <tr class="table-row-hover" style="border-bottom: 1px solid var(--border-subtle);">
         <td class="px-5 py-3 text-slate-200">Booking #${payment.Booking_ID}</td>
         <td class="px-5 py-3 text-slate-200 font-medium">$${Number(payment.Amount).toFixed(2)}</td>
         <td class="px-5 py-3 text-slate-300 hidden sm:table-cell">${escapeHtml(payment.Method_Name)}</td>

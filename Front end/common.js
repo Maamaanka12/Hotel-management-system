@@ -1,4 +1,5 @@
 const SESSION_KEY = 'hms_current_user';
+const THEME_KEY = 'hms_theme';
 
 function getCurrentUser() {
   const raw = localStorage.getItem(SESSION_KEY);
@@ -84,7 +85,47 @@ function hideAlertIn(elementId) {
   el.textContent = '';
 }
 
-document.addEventListener('DOMContentLoaded', renderUserBadge);
+// ── Light / Dark Theme ────────────────────────────────────────────────
+
+// Icon paths for the toggle buttons (sun = switch to light, moon = switch to dark)
+const SUN_ICON_PATH = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05L5.636 5.636m12.728 0L16.95 7.05M7.05 16.95l-1.414 1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
+const MOON_ICON_PATH = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>';
+
+function getSavedTheme() {
+  return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+}
+
+function applyTheme(theme, persist) {
+  document.documentElement.classList.toggle('light', theme === 'light');
+  if (persist !== false) {
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch (e) {
+      /* storage unavailable — theme still applies for this session */
+    }
+  }
+  updateThemeButtons();
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.contains('light');
+  applyTheme(isLight ? 'dark' : 'light');
+}
+
+function updateThemeButtons() {
+  const isLight = document.documentElement.classList.contains('light');
+  document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+    const icon = btn.querySelector('.theme-toggle-icon');
+    const label = btn.querySelector('.theme-toggle-label');
+    if (icon) icon.innerHTML = isLight ? MOON_ICON_PATH : SUN_ICON_PATH;
+    if (label) label.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(getSavedTheme(), false);
+  renderUserBadge();
+});
 
 
 
@@ -107,3 +148,7 @@ window.handleLogout = handleLogout;
 
 window.showAlertIn = showAlertIn;
 window.hideAlertIn = hideAlertIn;
+
+window.applyTheme = applyTheme;
+window.toggleTheme = toggleTheme;
+window.getSavedTheme = getSavedTheme;

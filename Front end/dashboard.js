@@ -115,7 +115,7 @@ async function loadRecentBookings() {
       .map((booking) => {
         const statusLabel = BOOKING_STATUS_LABELS[booking.Booking_Status_ID] || '—';
         return `
-        <tr class="table-row-hover" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+        <tr class="table-row-hover" style="border-bottom: 1px solid var(--border-subtle);">
           <td class="px-5 py-3 text-slate-200">${escapeHtml(booking.Full_Name)}</td>
           <td class="px-5 py-3 text-slate-200">${escapeHtml(booking.Room_Number)}</td>
           <td class="px-5 py-3 text-slate-400 hidden sm:table-cell">${formatDate(booking.Check_In_Date)}</td>

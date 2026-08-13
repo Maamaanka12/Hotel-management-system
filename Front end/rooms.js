@@ -86,7 +86,7 @@ function renderRoomRows(rooms) {
   tableBody.innerHTML = rooms
     .map(
       (room) => `
-      <tr class="table-row-hover" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+      <tr class="table-row-hover" style="border-bottom: 1px solid var(--border-subtle);">
         <td class="px-5 py-3 text-slate-200 font-medium">${escapeHtml(room.Room_Number)}</td>
         <td class="px-5 py-3 text-slate-300">${escapeHtml(room.Room_Type)}</td>
         <td class="px-5 py-3 text-slate-300 hidden sm:table-cell">$${Number(room.Price_Per_Night).toFixed(2)}</td>

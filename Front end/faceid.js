@@ -44,7 +44,7 @@ function renderEnrolledList() {
   listContainer.innerHTML = enrolled
     .map(
       (customer) => `
-      <div class="flex items-center gap-3 px-3 py-2 rounded-lg" style="background: #0E1322;">
+      <div class="flex items-center gap-3 px-3 py-2 rounded-lg" style="background: var(--bg-input);">
         <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #1e3a5f, #2a5298);">
           ${escapeHtml((customer.Full_Name || '?').charAt(0).toUpperCase())}
         </div>

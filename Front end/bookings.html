@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HMS — Bookings</title>
 
+  <!-- Apply saved theme before first paint -->
+  <script>
+    if (localStorage.getItem('hms_theme') === 'light') {
+      document.documentElement.classList.add('light');
+    }
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,7 +35,7 @@
   </script>
 
   <style>
-    body { font-family: "Inter", sans-serif; background: #0C0F1A; color: #e2e8f0; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-app); color: var(--text-primary); }
     .nav-link { transition: background 0.15s ease, color 0.15s ease; }
     .nav-link:hover { background: rgba(184,150,46,0.08); color: #D4AF54; }
     .nav-link.active { background: rgba(184,150,46,0.12); color: #D4AF54; border-left: 3px solid #B8962E; }
@@ -36,9 +43,82 @@
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 20; }
     .sidebar-overlay.visible { display: block; }
     .input-field:focus { outline: none; border-color: #B8962E; box-shadow: 0 0 0 3px rgba(184,150,46,0.15); }
-    .table-row-hover:hover { background: rgba(255,255,255,0.03); }
+    .table-row-hover:hover { background: var(--row-hover); }
+
+    /* ── Theme system (dark default, light via html.light) ── */
+    :root {
+      --bg-app: #0C0F1A;
+      --bg-sidebar: #0E1322;
+      --bg-surface: #12172B;
+      --bg-card: #1A2040;
+      --bg-input: #0E1322;
+      --border-subtle: rgba(255,255,255,0.05);
+      --border-strong: rgba(255,255,255,0.08);
+      --row-hover: rgba(255,255,255,0.03);
+      --text-primary: #ffffff;
+      --text-label: #cbd5e1;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-faint: #475569;
+      --text-ghost: #334155;
+      --scheme: dark;
+    }
+    html.light {
+      --bg-app: #f1f5f9;
+      --bg-sidebar: #ffffff;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-input: #f8fafc;
+      --border-subtle: rgba(15,23,42,0.08);
+      --border-strong: rgba(15,23,42,0.12);
+      --row-hover: rgba(15,23,42,0.04);
+      --text-primary: #0f172a;
+      --text-label: #334155;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --text-faint: #94a3b8;
+      --text-ghost: #cbd5e1;
+      --scheme: light;
+    }
+
+    /* Recolor Tailwind text/border utilities in light mode */
+    html.light .text-white { color: var(--text-primary) !important; }
+    html.light .text-slate-200 { color: var(--text-label) !important; }
+    html.light .text-slate-300 { color: var(--text-label) !important; }
+    html.light .text-slate-400 { color: var(--text-secondary) !important; }
+    html.light .text-slate-500 { color: var(--text-muted) !important; }
+    html.light .text-slate-600 { color: var(--text-faint) !important; }
+    html.light .text-slate-700 { color: var(--text-ghost) !important; }
+    html.light .hover\:text-white:hover { color: var(--text-primary) !important; }
+    html.light .hover\:text-slate-200:hover { color: var(--text-label) !important; }
+    html.light .border-white\/5,
+    html.light .border-white\/10 { border-color: var(--border-subtle) !important; }
+    html.light .bg-white\/5 { background-color: var(--row-hover) !important; }
+    html.light .hover\:bg-white\/5:hover { background-color: var(--row-hover) !important; }
+
+    /* Gold accents read better when darker on light surfaces */
+    html.light .text-gold,
+    html.light .text-gold-light { color: #8A6E1A !important; }
+    html.light .nav-link:hover,
+    html.light .nav-link.active { color: #8A6E1A; }
+    html.light .nav-link.active svg { color: #8A6E1A; }
+    html.light .active-filter { color: #8A6E1A; }
+
+    /* Status colors: deepen for contrast on white surfaces */
+    html.light .text-green-400 { color: #059669 !important; }
+    html.light .text-emerald-400 { color: #059669 !important; }
+    html.light .text-amber-400 { color: #b45309 !important; }
+    html.light .text-red-400 { color: #dc2626 !important; }
+    html.light .text-rose-400 { color: #e11d48 !important; }
+    html.light .text-blue-400 { color: #2563eb !important; }
+    html.light .text-violet-400 { color: #7c3aed !important; }
+    html.light .text-teal-400 { color: #0d9488 !important; }
+
+    /* Native date pickers + scrollbar follow the theme */
+    html.light input[type="date"]::-webkit-calendar-picker-indicator { filter: none; }
+    html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
     ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: #0C0F1A; }
+    ::-webkit-scrollbar-track { background: var(--bg-app); }
     ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 3px; }
     .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; padding: 1rem; }
     .modal-backdrop.open { display: flex; }
@@ -59,9 +139,9 @@
   <!-- SIDEBAR -->
   <aside id="sidebar"
     class="fixed lg:static inset-y-0 left-0 z-30 w-64 flex flex-col flex-shrink-0 overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300"
-    style="background: #0E1322; border-right: 1px solid rgba(255,255,255,0.05);">
+    style="background: var(--bg-sidebar); border-right: 1px solid var(--border-subtle);">
 
-    <div class="px-6 py-6 border-b" style="border-color: rgba(255,255,255,0.05);">
+    <div class="px-6 py-6 border-b" style="border-color: var(--border-subtle);">
       <p class="text-gold text-xs font-semibold tracking-[0.2em] uppercase">Staff Portal</p>
       <h1 class="font-display text-white text-xl font-bold mt-1">Grand HMS</h1>
     </div>
@@ -95,7 +175,15 @@
       </a>
     </nav>
 
-    <div class="px-4 py-4 border-t" style="border-color: rgba(255,255,255,0.05);">
+    <div class="px-4 py-4 border-t" style="border-color: var(--border-subtle);">
+      <!-- Theme toggle -->
+      <button data-theme-toggle onclick="toggleTheme()" title="Toggle light / dark mode"
+        class="theme-toggle w-full flex items-center gap-3 px-3 py-2.5 mb-3 rounded-lg text-sm font-medium text-slate-400 hover:bg-white/5 transition-colors">
+        <svg class="theme-toggle-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05L5.636 5.636m12.728 0L16.95 7.05M7.05 16.95l-1.414 1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        <span class="theme-toggle-label">Light Mode</span>
+      </button>
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
           <span id="userInitial">?</span>
@@ -114,7 +202,7 @@
   <!-- MAIN CONTENT -->
   <main class="flex-1 flex flex-col overflow-hidden">
 
-    <header class="flex items-center justify-between px-6 py-4 flex-shrink-0" style="background: #12172B; border-bottom: 1px solid rgba(255,255,255,0.05);">
+    <header class="flex items-center justify-between px-6 py-4 flex-shrink-0" style="background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle);">
       <button onclick="openSidebar()" class="lg:hidden text-slate-400 hover:text-white">
         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
@@ -138,7 +226,7 @@
           <p class="text-slate-500 text-sm mt-1"><span id="bookingCountDisplay">0</span> total bookings</p>
         </div>
         <!-- Status filter tabs -->
-        <div class="flex items-center gap-1 p-1 rounded-lg" style="background: #1A2040;">
+        <div class="flex items-center gap-1 p-1 rounded-lg" style="background: var(--bg-card);">
           <button onclick="setStatusFilter('All')"      id="filterAll"        class="filter-btn active-filter px-3 py-1.5 rounded-md text-xs font-medium transition-all">All</button>
           <button onclick="setStatusFilter('Active')"   id="filterActive"     class="filter-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-400 hover:text-white">Active</button>
           <button onclick="setStatusFilter('Checked Out')" id="filterCheckedOut" class="filter-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-400 hover:text-white">Checked Out</button>
@@ -147,11 +235,11 @@
       </div>
 
       <!-- Bookings Table -->
-      <div class="rounded-xl overflow-hidden" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.05);">
+      <div class="rounded-xl overflow-hidden" style="background: var(--bg-card); border: 1px solid var(--border-subtle);">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <tr style="border-bottom: 1px solid var(--border-subtle);">
                 <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Customer</th>
                 <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3">Room</th>
                 <th class="text-left text-slate-500 text-xs font-semibold uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Check-In</th>
@@ -176,9 +264,9 @@
 
   <!-- ADD / EDIT BOOKING MODAL -->
   <div class="modal-backdrop" id="bookingModal" onclick="handleModalBackdropClick(event)">
-    <div class="modal-box w-full max-w-lg rounded-xl shadow-2xl" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.08);">
+    <div class="modal-box w-full max-w-lg rounded-xl shadow-2xl" style="background: var(--bg-card); border: 1px solid var(--border-strong);">
 
-      <div class="flex items-center justify-between px-6 py-5 border-b" style="border-color: rgba(255,255,255,0.05);">
+      <div class="flex items-center justify-between px-6 py-5 border-b" style="border-color: var(--border-subtle);">
         <h3 id="modalTitle" class="text-white font-semibold text-base">New Booking</h3>
         <button onclick="closeModal()" class="text-slate-500 hover:text-white transition-colors">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -193,7 +281,7 @@
           <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Customer <span class="text-red-400">*</span></label>
           <select id="inputBookingCustomer"
             class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all appearance-none"
-            style="background: #0E1322;">
+            style="background: var(--bg-input);">
             <option value="">Select a customer...</option>
           </select>
         </div>
@@ -203,7 +291,7 @@
           <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Room <span class="text-red-400">*</span></label>
           <select id="inputBookingRoom"
             class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all appearance-none"
-            style="background: #0E1322;">
+            style="background: var(--bg-input);">
             <option value="">Select a room...</option>
           </select>
         </div>
@@ -214,13 +302,13 @@
             <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Check-In <span class="text-red-400">*</span></label>
             <input type="date" id="inputCheckIn"
               class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all"
-              style="background: #0E1322; color-scheme: dark;" />
+              style="background: var(--bg-input); color-scheme: var(--scheme);" />
           </div>
           <div>
             <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Check-Out <span class="text-red-400">*</span></label>
             <input type="date" id="inputCheckOut"
               class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all"
-              style="background: #0E1322; color-scheme: dark;" />
+              style="background: var(--bg-input); color-scheme: var(--scheme);" />
           </div>
         </div>
 
@@ -234,7 +322,7 @@
           <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Status <span class="text-red-400">*</span></label>
           <select id="inputBookingStatus"
             class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all appearance-none"
-            style="background: #0E1322;">
+            style="background: var(--bg-input);">
             <option value="Pending">Pending</option>
             <option value="Confirmed">Confirmed</option>
             <option value="Checked-In">Checked-In</option>
@@ -245,7 +333,7 @@
 
       </div>
 
-      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t" style="border-color: rgba(255,255,255,0.05);">
+      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t" style="border-color: var(--border-subtle);">
         <button onclick="closeModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">Cancel</button>
         <button id="modalSaveButton" onclick="handleSaveBooking()"
           class="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
@@ -259,7 +347,7 @@
 
   <!-- DELETE CONFIRMATION MODAL -->
   <div class="modal-backdrop" id="deleteModal" onclick="handleDeleteBackdropClick(event)">
-    <div class="modal-box w-full max-w-sm rounded-xl shadow-2xl" style="background: #1A2040; border: 1px solid rgba(255,255,255,0.08);">
+    <div class="modal-box w-full max-w-sm rounded-xl shadow-2xl" style="background: var(--bg-card); border: 1px solid var(--border-strong);">
       <div class="px-6 py-6 text-center">
         <div class="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
           <svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
