@@ -176,14 +176,6 @@
     </nav>
 
     <div class="px-4 py-4 border-t" style="border-color: var(--border-subtle);">
-      <!-- Theme toggle -->
-      <button data-theme-toggle onclick="toggleTheme()" title="Toggle light / dark mode"
-        class="theme-toggle w-full flex items-center gap-3 px-3 py-2.5 mb-3 rounded-lg text-sm font-medium text-slate-400 hover:bg-white/5 transition-colors">
-        <svg class="theme-toggle-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05L5.636 5.636m12.728 0L16.95 7.05M7.05 16.95l-1.414 1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-        </svg>
-        <span class="theme-toggle-label">Light Mode</span>
-      </button>
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
           <span id="userInitial">?</span>
@@ -215,6 +207,13 @@
         style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Add Payment
+      </button>
+      <!-- Theme toggle -->
+      <button data-theme-toggle onclick="toggleTheme()" title="Toggle light / dark mode"
+        class="text-slate-400 hover:text-gold transition-colors">
+        <svg class="theme-toggle-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05L5.636 5.636m12.728 0L16.95 7.05M7.05 16.95l-1.414 1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
       </button>
     </header>
 
