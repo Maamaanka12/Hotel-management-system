@@ -188,6 +188,7 @@ async function handleSaveRoom() {
     }
     closeModal();
     renderRoomsTable();
+    showToast(editingRoomId ? 'Room updated successfully.' : 'Room added successfully.', 'success');
   } catch (error) {
     showAlertIn('modalAlert', error.message || 'Failed to save room.', 'error');
   }
@@ -215,9 +216,11 @@ async function confirmDeleteRoom() {
     await API.delete(`/rooms/${deletingRoomId}`);
     closeDeleteModal();
     renderRoomsTable();
+    showToast('Room deleted successfully.', 'success');
   } catch (error) {
     closeDeleteModal();
     console.error('Failed to delete room:', error);
+    showToast(error.message || 'Failed to delete room.', 'error');
   }
 }
 

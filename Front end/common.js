@@ -85,6 +85,64 @@ function hideAlertIn(elementId) {
   el.textContent = '';
 }
 
+// ── Toast Notifications ───────────────────────────────────────────────
+
+// Shows a small pop-up notification in the corner of the page.
+// Styled with the theme CSS variables so it matches dark and light mode.
+function showToast(message, type = 'error') {
+  // Remove any existing toast so only one shows at a time
+  document.querySelectorAll('.app-toast').forEach((t) => t.remove());
+
+  const accentColors = {
+    success: '#22c55e',
+    error: '#ef4444',
+    warning: '#f59e0b',
+    info: '#3b82f6'
+  };
+  const accent = accentColors[type] || accentColors.error;
+
+  const toast = document.createElement('div');
+  toast.className = 'app-toast';
+  toast.setAttribute('role', 'alert');
+  toast.style.cssText = `
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    display: flex; align-items: center; gap: 10px;
+    max-width: 360px; padding: 12px 16px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid ${accent};
+    color: var(--text-primary);
+    font-size: 14px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    opacity: 0; transform: translateY(-8px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  `;
+
+  const dot = document.createElement('span');
+  dot.style.cssText = `width: 8px; height: 8px; border-radius: 50%; background: ${accent}; flex-shrink: 0;`;
+
+  const text = document.createElement('span');
+  text.textContent = message;
+
+  toast.appendChild(dot);
+  toast.appendChild(text);
+  document.body.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+
+  // Auto-dismiss after 4 seconds
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-8px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
 // ── Light / Dark Theme ────────────────────────────────────────────────
 
 // Icon paths for the toggle buttons (sun = switch to light, moon = switch to dark)
@@ -148,6 +206,8 @@ window.handleLogout = handleLogout;
 
 window.showAlertIn = showAlertIn;
 window.hideAlertIn = hideAlertIn;
+
+window.showToast = showToast;
 
 window.applyTheme = applyTheme;
 window.toggleTheme = toggleTheme;

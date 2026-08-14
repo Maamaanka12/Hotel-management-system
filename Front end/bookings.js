@@ -298,6 +298,7 @@ async function handleSaveBooking() {
     }
     closeModal();
     renderBookingsTable();
+    showToast(editingBookingId ? 'Booking updated successfully.' : 'Booking created successfully.', 'success');
   } catch (error) {
     showAlertIn('modalAlert', error.message || 'Failed to save booking.', 'error');
   }
@@ -323,9 +324,11 @@ async function confirmDeleteBooking() {
     await API.delete(`/bookings/${deletingBookingId}`);
     closeDeleteModal();
     renderBookingsTable();
+    showToast('Booking deleted successfully.', 'success');
   } catch (error) {
     closeDeleteModal();
     console.error('Failed to delete booking:', error);
+    showToast(error.message || 'Failed to delete booking.', 'error');
   }
 }
 

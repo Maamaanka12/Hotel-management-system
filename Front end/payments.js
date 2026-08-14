@@ -234,6 +234,7 @@ async function handleSavePayment() {
     }
     closeModal();
     renderPaymentsTable();
+    showToast(editingPaymentId ? 'Payment updated successfully.' : 'Payment added successfully.', 'success');
   } catch (error) {
     showAlertIn('modalAlert', error.message || 'Failed to save payment.', 'error');
   }
@@ -259,9 +260,11 @@ async function confirmDeletePayment() {
     await API.delete(`/payments/${deletingPaymentId}`);
     closeDeleteModal();
     renderPaymentsTable();
+    showToast('Payment deleted successfully.', 'success');
   } catch (error) {
     closeDeleteModal();
     console.error('Failed to delete payment:', error);
+    showToast(error.message || 'Failed to delete payment.', 'error');
   }
 }
 

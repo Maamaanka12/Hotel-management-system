@@ -204,7 +204,7 @@ if (editingCustomerId) {
 closeModal();
 
 renderCustomersTable();
- 
+showToast(editingCustomerId ? 'Customer updated successfully.' : 'Customer added successfully.', 'success');
 
 } catch (error) {
 
@@ -245,9 +245,11 @@ async function confirmDeleteCustomer() {
     await API.delete(`/guests/${deletingCustomerId}`);
     closeDeleteModal();
     renderCustomersTable();
+    showToast('Customer deleted successfully.', 'success');
   } catch (error) {
     closeDeleteModal();
     console.error('Failed to delete customer:', error);
+    showToast(error.message || 'Failed to delete customer.', 'error');
   }
 }
 

@@ -161,6 +161,7 @@ function showScanSuccess() {
 
   setCameraStatus('success', 'Enrollment complete');
   showAlertIn('scanStatusMessage', 'Face enrolled successfully.', 'success');
+  showToast('Face enrolled successfully.', 'success');
 }
 
 function showScanError(message) {
@@ -175,6 +176,7 @@ function showScanError(message) {
 
   setCameraStatus('error', 'Scan failed');
   showAlertIn('scanStatusMessage', message, 'error');
+  showToast(message, 'error');
 }
 
 async function refreshCustomerDataAfterScan() {
