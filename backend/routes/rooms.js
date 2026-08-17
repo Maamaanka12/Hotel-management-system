@@ -229,6 +229,19 @@ router.delete("/:roomId", async (request, response) => {
             return sendErrorResponse(response, 409, "Cannot delete room with active bookings.");
         }
 
+        const historyCheck = await databasePool
+            .request()
+            .input("RoomId", sql.Int, roomId)
+            .query(`
+                SELECT TOP 1 Booking_ID FROM BOOKINGS
+                WHERE Room_ID = @RoomId
+                  AND Booking_Status_ID NOT IN (1, 2, 3)
+            `);
+
+        if (historyCheck.recordset.length > 0) {
+            return sendErrorResponse(response, 409, "Cannot delete room with past or cancelled bookings.");
+        }
+
         const deleteResult = await databasePool
             .request()
             .input("RoomId", sql.Int, roomId)

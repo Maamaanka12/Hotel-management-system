@@ -259,6 +259,19 @@ router.delete("/:guestId", async (request, response) => {
             return sendErrorResponse(response, 409, "Cannot delete guest with active bookings.");
         }
 
+        const historyCheck = await databasePool
+            .request()
+            .input("GuestId", sql.Int, guestId)
+            .query(`
+                SELECT TOP 1 Booking_ID FROM BOOKINGS
+                WHERE Guest_ID = @GuestId
+                  AND Booking_Status_ID NOT IN (1, 2, 3)
+            `);
+
+        if (historyCheck.recordset.length > 0) {
+            return sendErrorResponse(response, 409, "Cannot delete guest with past or cancelled bookings.");
+        }
+
         const deleteResult = await databasePool
             .request()
             .input("GuestId", sql.Int, guestId)

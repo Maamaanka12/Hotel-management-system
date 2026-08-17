@@ -323,6 +323,18 @@ router.delete("/:id", async (request, response) => {
         const bookingId = parseInt(request.params.id);
         const databasePool = getDatabasePool();
 
+        const paymentCheck = await databasePool
+            .request()
+            .input("BookingId", sql.Int, bookingId)
+            .query(`
+                SELECT TOP 1 Payment_ID FROM PAYMENTS
+                WHERE Booking_ID = @BookingId
+            `);
+
+        if (paymentCheck.recordset.length > 0) {
+            return sendErrorResponse(response, 409, "Cannot delete booking with existing payments.");
+        }
+
         const deleteResult = await databasePool
             .request()
             .input("BookingId", sql.Int, bookingId)
