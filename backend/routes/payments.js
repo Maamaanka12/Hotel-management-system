@@ -58,7 +58,8 @@ router.get("/", async (request, response) => {
                 payment.Amount,
                 payment.Method_ID,
                 method.Method_Name,
-                payment.Payment_Date
+                payment.Payment_Date,
+                payment.Status
             FROM PAYMENTS AS payment
             INNER JOIN PAYMENT_METHODS AS method
                 ON payment.Method_ID = method.Method_ID
@@ -100,7 +101,8 @@ router.get("/:paymentId", async (request, response) => {
                     payment.Amount,
                     payment.Method_ID,
                     method.Method_Name,
-                    payment.Payment_Date
+                    payment.Payment_Date,
+                    payment.Status
                 FROM PAYMENTS AS payment
                 INNER JOIN PAYMENT_METHODS AS method
                     ON payment.Method_ID = method.Method_ID
@@ -134,6 +136,7 @@ router.post("/", async (request, response) => {
         const amount = request.body.amount;
         const methodId = Number(request.body.methodId);
         const paymentDate = request.body.paymentDate || new Date();
+        const status = request.body.status || "Paid";
 
         if (!bookingId || amount === undefined || !methodId) {
             return sendErrorResponse(response, 400, "Booking ID, amount, and method ID are required.");
@@ -156,11 +159,12 @@ router.post("/", async (request, response) => {
             .input("Amount", sql.Decimal(18, 2), amount)
             .input("MethodId", sql.Int, methodId)
             .input("PaymentDate", sql.Date, paymentDate)
+            .input("Status", sql.VarChar(20), status)
             .query(`
-                INSERT INTO PAYMENTS (Booking_ID, Amount, Method_ID, Payment_Date)
+                INSERT INTO PAYMENTS (Booking_ID, Amount, Method_ID, Payment_Date, Status)
                 OUTPUT INSERTED.Payment_ID, INSERTED.Booking_ID, INSERTED.Amount,
-                       INSERTED.Method_ID, INSERTED.Payment_Date
-                VALUES (@BookingId, @Amount, @MethodId, @PaymentDate)
+                       INSERTED.Method_ID, INSERTED.Payment_Date, INSERTED.Status
+                VALUES (@BookingId, @Amount, @MethodId, @PaymentDate, @Status)
             `);
 
         return response.status(201).json({
@@ -197,13 +201,15 @@ router.put("/:paymentId", async (request, response) => {
             .input("Amount", sql.Decimal(18, 2), request.body.amount ?? null)
             .input("MethodId", sql.Int, request.body.methodId ?? null)
             .input("PaymentDate", sql.Date, request.body.paymentDate ?? null)
+            .input("Status", sql.VarChar(20), request.body.status ?? null)
             .query(`
                 UPDATE PAYMENTS
                 SET
                     Booking_ID   = COALESCE(@BookingId,   Booking_ID),
                     Amount       = COALESCE(@Amount,       Amount),
                     Method_ID    = COALESCE(@MethodId,     Method_ID),
-                    Payment_Date = COALESCE(@PaymentDate,  Payment_Date)
+                    Payment_Date = COALESCE(@PaymentDate,  Payment_Date),
+                    Status       = COALESCE(@Status,       Status)
                 WHERE Payment_ID = @PaymentId
 
                 SELECT
@@ -211,7 +217,8 @@ router.put("/:paymentId", async (request, response) => {
                     Booking_ID,
                     Amount,
                     Method_ID,
-                    Payment_Date
+                    Payment_Date,
+                    Status
                 FROM PAYMENTS
                 WHERE Payment_ID = @PaymentId
             `);

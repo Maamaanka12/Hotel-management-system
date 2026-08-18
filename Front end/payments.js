@@ -44,7 +44,9 @@ function renderSummaryCards() {
 
 function applyStatusFilter() {
   const filtered =
-    activeStatusFilter === 'All' || activeStatusFilter === 'Paid' ? allPayments : [];
+    activeStatusFilter === 'All'
+      ? allPayments
+      : allPayments.filter((p) => (p.Status || 'Paid') === activeStatusFilter);
   renderPaymentRows(filtered);
 }
 
@@ -92,7 +94,7 @@ function renderPaymentRows(payments) {
         <td class="px-5 py-3 text-slate-200 font-medium">$${Number(payment.Amount).toFixed(2)}</td>
         <td class="px-5 py-3 text-slate-300 hidden sm:table-cell">${escapeHtml(payment.Method_Name)}</td>
         <td class="px-5 py-3 text-slate-400 hidden md:table-cell">${formatDate(payment.Payment_Date)}</td>
-        <td class="px-5 py-3"><span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400">Paid</span></td>
+        <td class="px-5 py-3">${statusBadge(payment.Status)}</td>
         <td class="px-5 py-3 text-right space-x-2">
           <button onclick="openEditModal(${payment.Payment_ID})" class="text-slate-400 hover:text-gold text-xs font-medium">Edit</button>
           <button onclick="openDeleteModal(${payment.Payment_ID})" class="text-slate-400 hover:text-red-400 text-xs font-medium">Delete</button>
@@ -164,7 +166,7 @@ async function openEditModal(paymentId) {
   document.getElementById('inputPaymentAmount').value = payment.Amount;
   document.getElementById('inputPaymentMethod').value = payment.Method_Name;
   document.getElementById('inputPaymentDate').value = toDateInputValue(payment.Payment_Date);
-  document.getElementById('inputPaymentStatus').value = 'Paid';
+  document.getElementById('inputPaymentStatus').value = payment.Status || 'Paid';
   hideAlertIn('modalAlert');
   document.getElementById('paymentModal').classList.add('open');
 }
@@ -194,6 +196,7 @@ async function handleSavePayment() {
   const amount = Number(document.getElementById('inputPaymentAmount').value);
   const methodName = document.getElementById('inputPaymentMethod').value;
   const paymentDate = document.getElementById('inputPaymentDate').value;
+  const status = document.getElementById('inputPaymentStatus').value || 'Paid';
 
   if (!bookingId || !amount || !methodName || !paymentDate) {
     showAlertIn('modalAlert', 'Please fill in all required fields.', 'error');
@@ -224,7 +227,7 @@ async function handleSavePayment() {
     return;
   }
 
-  const payload = { bookingId, amount, methodId, paymentDate };
+  const payload = { bookingId, amount, methodId, paymentDate, status };
 
   try {
     if (editingPaymentId) {
@@ -266,6 +269,17 @@ async function confirmDeletePayment() {
     console.error('Failed to delete payment:', error);
     showToast(error.message || 'Failed to delete payment.', 'error');
   }
+}
+
+function statusBadge(status) {
+  const normalized = String(status || 'Paid').toLowerCase();
+  if (normalized === 'pending') {
+    return '<span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-400">Pending</span>';
+  }
+  if (normalized === 'refunded') {
+    return '<span class="px-2 py-1 rounded-full text-xs font-medium bg-rose-500/15 text-rose-400">Refunded</span>';
+  }
+  return '<span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400">Paid</span>';
 }
 
 function formatDate(value) {
