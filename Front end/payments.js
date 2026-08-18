@@ -36,9 +36,14 @@ async function loadMethodMap() {
 }
 
 function renderSummaryCards() {
-  const totalPaid = allPayments.reduce((sum, p) => sum + Number(p.Amount || 0), 0);
-  setText('summaryTotalPaid', `$${totalPaid.toFixed(2)}`);
-  setText('summaryTotalPending', '$0.00');
+  const totalForStatus = (status) =>
+    allPayments
+      .filter((p) => (p.Status || 'Paid') === status)
+      .reduce((sum, p) => sum + Number(p.Amount || 0), 0);
+
+  setText('summaryTotalPaid', `$${totalForStatus('Paid').toFixed(2)}`);
+  setText('summaryTotalPending', `$${totalForStatus('Pending').toFixed(2)}`);
+  setText('summaryTotalRefunded', `$${totalForStatus('Refunded').toFixed(2)}`);
   setText('summaryTotalRecords', allPayments.length);
 }
 
