@@ -85,10 +85,14 @@ function getStatusLabel(booking) {
 }
 
 function applyStatusFilter() {
-  const filtered =
-    activeStatusFilter === 'All'
-      ? allBookings
-      : allBookings.filter((b) => getStatusLabel(b) === activeStatusFilter);
+  let filtered;
+  if (activeStatusFilter === 'All') {
+    filtered = allBookings;
+  } else if (activeStatusFilter === 'Active') {
+    filtered = allBookings.filter((b) => ACTIVE_STATUS_IDS.has(b.Booking_Status_ID));
+  } else {
+    filtered = allBookings.filter((b) => getStatusLabel(b) === activeStatusFilter);
+  }
   renderBookingRows(filtered);
 }
 
@@ -96,7 +100,7 @@ function setStatusFilter(status) {
   activeStatusFilter = status;
   const filterButtonIds = {
     'All':          'filterAll',
-    'Confirmed':    'filterActive',
+    'Active':       'filterActive',
     'Checked-Out':  'filterCheckedOut',
     'Cancelled':    'filterCancelled'
   };
