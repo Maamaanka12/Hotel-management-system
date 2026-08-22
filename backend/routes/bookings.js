@@ -252,6 +252,14 @@ router.post("/", async (request, response) => {
                 VALUES (@GuestId, @RoomId, @CheckIn, @CheckOut, @TotalAmount, @StatusId)
             `);
 
+        // Sync room status: mark as Occupied if booking is Confirmed or Checked-In
+        if (statusId === 2 || statusId === 3) {
+            await databasePool
+                .request()
+                .input("RoomId", sql.Int, roomId)
+                .query(`UPDATE ROOMS SET Status_ID = 2 WHERE Room_ID = @RoomId`);
+        }
+
         return response.status(201).json({
             success: true,
             message: "Booking created successfully.",
@@ -281,6 +289,12 @@ router.put("/:id", async (request, response) => {
 
         const databasePool = getDatabasePool();
 
+        // Fetch current booking to detect room changes
+        const currentBooking = await databasePool
+            .request()
+            .input("BookingId", sql.Int, bookingId)
+            .query(`SELECT Room_ID FROM BOOKINGS WHERE Booking_ID = @BookingId`);
+
         const updateResult = await databasePool
             .request()
             .input("BookingId", sql.Int, bookingId)
@@ -305,6 +319,54 @@ router.put("/:id", async (request, response) => {
 
         if (updateResult.recordset[0].AffectedRows === 0) {
             return sendErrorResponse(response, 404, "Booking not found.");
+        }
+
+        // Sync room statuses after booking update
+        const oldRoomId = currentBooking.recordset[0] ? currentBooking.recordset[0].Room_ID : null;
+
+        // Free the old room if it changed or booking is no longer active
+        if (oldRoomId && oldRoomId !== roomId) {
+            // Check if old room has other active bookings
+            const otherActive = await databasePool
+                .request()
+                .input("OldRoomId", sql.Int, oldRoomId)
+                .input("BookingId", sql.Int, bookingId)
+                .query(`
+                    SELECT TOP 1 Booking_ID FROM BOOKINGS
+                    WHERE Room_ID = @OldRoomId AND Booking_ID != @BookingId
+                      AND Booking_Status_ID IN (2, 3)
+                `);
+            if (otherActive.recordset.length === 0) {
+                await databasePool
+                    .request()
+                    .input("OldRoomId", sql.Int, oldRoomId)
+                    .query(`UPDATE ROOMS SET Status_ID = 1 WHERE Room_ID = @OldRoomId`);
+            }
+        }
+
+        // Update new room status based on booking status
+        if (statusId === 2 || statusId === 3) {
+            await databasePool
+                .request()
+                .input("RoomId", sql.Int, roomId)
+                .query(`UPDATE ROOMS SET Status_ID = 2 WHERE Room_ID = @RoomId`);
+        } else if (statusId === 4 || statusId === 5) {
+            // Checked-Out or Cancelled — free the room if no other active bookings
+            const otherActive = await databasePool
+                .request()
+                .input("RoomId", sql.Int, roomId)
+                .input("BookingId", sql.Int, bookingId)
+                .query(`
+                    SELECT TOP 1 Booking_ID FROM BOOKINGS
+                    WHERE Room_ID = @RoomId AND Booking_ID != @BookingId
+                      AND Booking_Status_ID IN (2, 3)
+                `);
+            if (otherActive.recordset.length === 0) {
+                await databasePool
+                    .request()
+                    .input("RoomId", sql.Int, roomId)
+                    .query(`UPDATE ROOMS SET Status_ID = 1 WHERE Room_ID = @RoomId`);
+            }
         }
 
         return response.status(200).json({
@@ -335,6 +397,12 @@ router.delete("/:id", async (request, response) => {
             return sendErrorResponse(response, 409, "Cannot delete booking with existing payments.");
         }
 
+        // Fetch booking before delete to free the room
+        const bookingToDelete = await databasePool
+            .request()
+            .input("BookingId", sql.Int, bookingId)
+            .query(`SELECT Room_ID, Booking_Status_ID FROM BOOKINGS WHERE Booking_ID = @BookingId`);
+
         const deleteResult = await databasePool
             .request()
             .input("BookingId", sql.Int, bookingId)
@@ -345,6 +413,26 @@ router.delete("/:id", async (request, response) => {
 
         if (deleteResult.recordset[0].AffectedRows === 0) {
             return sendErrorResponse(response, 404, "Booking not found.");
+        }
+
+        // Free the room if the deleted booking was active and no other active bookings remain
+        if (bookingToDelete.recordset.length > 0) {
+            const deleted = bookingToDelete.recordset[0];
+            if (deleted.Booking_Status_ID === 2 || deleted.Booking_Status_ID === 3) {
+                const otherActive = await databasePool
+                    .request()
+                    .input("RoomId", sql.Int, deleted.Room_ID)
+                    .query(`
+                        SELECT TOP 1 Booking_ID FROM BOOKINGS
+                        WHERE Room_ID = @RoomId AND Booking_Status_ID IN (2, 3)
+                    `);
+                if (otherActive.recordset.length === 0) {
+                    await databasePool
+                        .request()
+                        .input("RoomId", sql.Int, deleted.Room_ID)
+                        .query(`UPDATE ROOMS SET Status_ID = 1 WHERE Room_ID = @RoomId`);
+                }
+            }
         }
 
         return response.status(200).json({
