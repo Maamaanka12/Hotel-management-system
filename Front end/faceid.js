@@ -61,7 +61,7 @@ function handleCustomerSelection() {
   const scanButton = document.getElementById('startScanButton');
   const card = document.getElementById('selectedCustomerCard');
 
-  resetViewfinder();
+  document.getElementById('scanStatusMessage').classList.add('hidden');
 
   selectedCustomerId = customerSelect.value ? Number(customerSelect.value) : null;
 
@@ -86,97 +86,26 @@ function handleCustomerSelection() {
     : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-500/15 text-slate-400">Not Enrolled</span>';
 }
 
-function resetViewfinder() {
-  document.getElementById('viewfinderIdle').classList.remove('hidden');
-  document.getElementById('viewfinderIdle').classList.add('flex');
-  document.getElementById('viewfinderScanning').classList.add('hidden');
-  document.getElementById('viewfinderSuccess').classList.add('hidden');
-  document.getElementById('viewfinderError').classList.add('hidden');
-
-  const box = document.getElementById('viewfinderBox');
-  box.classList.remove('viewfinder-scanning', 'viewfinder-success', 'viewfinder-error');
-  box.classList.add('viewfinder-idle');
-
-  document.getElementById('scanStatusMessage').classList.add('hidden');
-  setCameraStatus('idle', 'Camera idle');
-}
-
-function setCameraStatus(state, label) {
-  const indicator = document.getElementById('cameraIndicator');
-  const statusLabel = document.getElementById('cameraStatusLabel');
-  const colors = {
-    idle: 'bg-slate-600',
-    scanning: 'bg-amber-400',
-    success: 'bg-emerald-400',
-    error: 'bg-rose-400'
-  };
-  indicator.className = `w-2 h-2 rounded-full ${colors[state] || colors.idle}`;
-  statusLabel.textContent = label;
-}
-
 async function startFaceScan() {
   if (!selectedCustomerId) return;
 
   const scanButton = document.getElementById('startScanButton');
   scanButton.disabled = true;
 
-  document.getElementById('viewfinderIdle').classList.add('hidden');
-  document.getElementById('viewfinderIdle').classList.remove('flex');
-  document.getElementById('viewfinderSuccess').classList.add('hidden');
-  document.getElementById('viewfinderError').classList.add('hidden');
-  document.getElementById('viewfinderScanning').classList.remove('hidden');
-  document.getElementById('viewfinderScanning').classList.add('flex');
-
-  const box = document.getElementById('viewfinderBox');
-  box.classList.remove('viewfinder-idle', 'viewfinder-success', 'viewfinder-error');
-  box.classList.add('viewfinder-scanning');
-
-  setCameraStatus('scanning', 'Scanning...');
-  document.getElementById('scanProgressText').textContent = 'Looking for a face...';
   hideAlertIn('scanStatusMessage');
 
   try {
-    const result = await API.post('/guests/scan-face', { guestId: selectedCustomerId });
-    showScanSuccess();
+    await API.post('/guests/scan-face', { guestId: selectedCustomerId });
+    showAlertIn('scanStatusMessage', 'Face enrolled successfully.', 'success');
+    showToast('Face enrolled successfully.', 'success');
     await refreshCustomerDataAfterScan();
   } catch (error) {
-    showScanError(error.message || 'No face detected. Please try again.');
+    const msg = error.message || 'No face detected. Please try again.';
+    showAlertIn('scanStatusMessage', msg, 'error');
+    showToast(msg, 'error');
   } finally {
     scanButton.disabled = false;
   }
-}
-
-function showScanSuccess() {
-  document.getElementById('viewfinderScanning').classList.add('hidden');
-  document.getElementById('viewfinderScanning').classList.remove('flex');
-  document.getElementById('viewfinderSuccess').classList.remove('hidden');
-  document.getElementById('viewfinderSuccess').classList.add('flex');
-
-  const box = document.getElementById('viewfinderBox');
-  box.classList.remove('viewfinder-scanning');
-  box.classList.add('viewfinder-success');
-
-  const customer = allCustomersForFaceId.find((c) => c.Guest_ID === selectedCustomerId);
-  document.getElementById('successCustomerName').textContent = customer ? customer.Full_Name : '—';
-
-  setCameraStatus('success', 'Enrollment complete');
-  showAlertIn('scanStatusMessage', 'Face enrolled successfully.', 'success');
-  showToast('Face enrolled successfully.', 'success');
-}
-
-function showScanError(message) {
-  document.getElementById('viewfinderScanning').classList.add('hidden');
-  document.getElementById('viewfinderScanning').classList.remove('flex');
-  document.getElementById('viewfinderError').classList.remove('hidden');
-  document.getElementById('viewfinderError').classList.add('flex');
-
-  const box = document.getElementById('viewfinderBox');
-  box.classList.remove('viewfinder-scanning');
-  box.classList.add('viewfinder-error');
-
-  setCameraStatus('error', 'Scan failed');
-  showAlertIn('scanStatusMessage', message, 'error');
-  showToast(message, 'error');
 }
 
 async function refreshCustomerDataAfterScan() {

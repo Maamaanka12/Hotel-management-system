@@ -120,75 +120,6 @@
     html.light input[type="date"]::-webkit-calendar-picker-indicator { filter: none; }
     html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
 
-    /* Webcam viewfinder frame */
-    .viewfinder {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      background: #0C0F1A;
-      border-radius: 0.75rem;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Animated corner brackets on the scan frame */
-    .scan-frame {
-      position: absolute;
-      width: 180px;
-      height: 180px;
-      pointer-events: none;
-    }
-    .scan-frame::before,
-    .scan-frame::after,
-    .scan-frame > span::before,
-    .scan-frame > span::after {
-      content: "";
-      position: absolute;
-      width: 28px;
-      height: 28px;
-      border-color: #B8962E;
-      border-style: solid;
-    }
-    .scan-frame::before        { top: 0;    left: 0;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-    .scan-frame::after         { top: 0;    right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
-    .scan-frame > span::before { bottom: 0; left: 0;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
-    .scan-frame > span::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-
-    /* Scanning laser line animation */
-    @keyframes scanLine {
-      0%   { top: 10%; }
-      50%  { top: 85%; }
-      100% { top: 10%; }
-    }
-    .scan-laser {
-      position: absolute;
-      width: 160px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #B8962E, transparent);
-      left: 50%;
-      transform: translateX(-50%);
-      animation: scanLine 2s ease-in-out infinite;
-      box-shadow: 0 0 8px rgba(184,150,46,0.6);
-      display: none;
-    }
-    .scan-laser.active { display: block; }
-
-    /* Pulse ring on success */
-    @keyframes pulseRing {
-      0%   { transform: scale(0.8); opacity: 1; }
-      100% { transform: scale(1.6); opacity: 0; }
-    }
-    .pulse-ring {
-      animation: pulseRing 1s ease-out forwards;
-    }
-
-    /* State transition on the viewfinder border */
-    .viewfinder-idle    { border: 2px solid rgba(255,255,255,0.06); }
-    .viewfinder-scanning{ border: 2px solid rgba(184,150,46,0.5); }
-    .viewfinder-success { border: 2px solid rgba(16,185,129,0.6); }
-    .viewfinder-error   { border: 2px solid rgba(244,63,94,0.5); }
   </style>
 </head>
 
@@ -311,7 +242,7 @@
           <!-- Scan controls card -->
           <div class="rounded-xl p-5" style="background: var(--bg-card); border: 1px solid var(--border-subtle);">
             <h4 class="text-white font-semibold text-sm mb-1">Enrollment Controls</h4>
-            <p class="text-slate-500 text-xs mb-4">The scan simulates a real webcam face detection and takes ~3 seconds.</p>
+            <p class="text-slate-500 text-xs mb-4">Select a customer and press scan to enroll their face.</p>
 
             <button id="startScanButton" onclick="startFaceScan()"
               disabled
@@ -338,75 +269,8 @@
 
         </div>
 
-        <!-- RIGHT: Viewfinder Panel -->
+        <!-- RIGHT: Instructions Panel -->
         <div class="space-y-5">
-
-          <div class="rounded-xl p-5" style="background: var(--bg-card); border: 1px solid var(--border-subtle);">
-            <h4 class="text-white font-semibold text-sm mb-4">Camera Viewfinder</h4>
-
-            <!-- The viewfinder box -->
-            <div id="viewfinderBox" class="viewfinder viewfinder-idle rounded-xl">
-
-              <!-- Idle placeholder -->
-              <div id="viewfinderIdle" class="flex flex-col items-center gap-3 text-center px-8">
-                <svg class="w-14 h-14 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
-                </svg>
-                <p class="text-slate-500 text-sm">Select a customer and press<br><span class="text-gold">Start Face Scan</span> to begin</p>
-              </div>
-
-              <!-- Scanning state -->
-              <div id="viewfinderScanning" class="hidden flex-col items-center gap-4">
-                <!-- Simulated face silhouette -->
-                <div class="relative">
-                  <svg class="w-28 h-28 text-slate-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-                  </svg>
-                  <!-- Scanning laser line -->
-                  <div class="scan-laser active" id="scanLaser"></div>
-                  <!-- Corner brackets frame -->
-                  <div class="scan-frame absolute inset-0 m-auto" style="width:112px;height:112px;"><span></span></div>
-                </div>
-                <p id="scanProgressText" class="text-gold text-sm font-medium animate-pulse">Initializing scan...</p>
-              </div>
-
-              <!-- Success state -->
-              <div id="viewfinderSuccess" class="hidden flex-col items-center gap-3">
-                <div class="relative">
-                  <div class="w-20 h-20 rounded-full flex items-center justify-center" style="background: rgba(16,185,129,0.15);">
-                    <svg class="w-10 h-10 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                  </div>
-                  <div class="absolute inset-0 rounded-full border-2 border-emerald-400 pulse-ring"></div>
-                </div>
-                <p class="text-emerald-400 font-semibold text-sm">Face Enrolled Successfully</p>
-                <p id="successCustomerName" class="text-white text-base font-bold">—</p>
-              </div>
-
-              <!-- Error state -->
-              <div id="viewfinderError" class="hidden flex-col items-center gap-3">
-                <div class="w-20 h-20 rounded-full flex items-center justify-center" style="background: rgba(244,63,94,0.15);">
-                  <svg class="w-10 h-10 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                </div>
-                <p class="text-rose-400 font-semibold text-sm">Scan Failed</p>
-                <p class="text-slate-500 text-xs">No face detected. Please try again.</p>
-              </div>
-
-            </div>
-
-            <!-- Viewfinder status bar -->
-            <div class="mt-3 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div id="cameraIndicator" class="w-2 h-2 rounded-full bg-slate-600"></div>
-                <span id="cameraStatusLabel" class="text-slate-500 text-xs">Camera idle</span>
-              </div>
-              <span class="text-slate-600 text-xs">Simulated webcam</span>
-            </div>
-
-          </div>
 
           <!-- Instructions card -->
           <div class="rounded-xl p-5" style="background: var(--bg-card); border: 1px solid var(--border-subtle);">
