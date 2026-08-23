@@ -154,6 +154,54 @@ const statusMap = {
 router.get("/", async (request, response) => {
     try {
         const databasePool = getDatabasePool();
+
+        // ── Auto-checkout: transition overdue Confirmed / Checked-In bookings ──
+        const today = new Date();
+        const todayStr = today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0');
+
+        // 1. Find all active bookings whose Check_Out_Date has passed
+        const overdueResult = await databasePool
+            .request()
+            .input("Today", sql.Date, todayStr)
+            .query(`
+                SELECT Booking_ID, Room_ID
+                FROM BOOKINGS
+                WHERE Booking_Status_ID IN (2, 3)
+                  AND Check_Out_Date < @Today
+            `);
+
+        // 2. Transition each one to Checked-Out and free the room
+        for (const overdue of overdueResult.recordset) {
+            await databasePool
+                .request()
+                .input("BookingId", sql.Int, overdue.Booking_ID)
+                .query(`
+                    UPDATE BOOKINGS
+                    SET Booking_Status_ID = 4
+                    WHERE Booking_ID = @BookingId
+                `);
+
+            // Free the room only if no other active bookings remain for it
+            const otherActive = await databasePool
+                .request()
+                .input("RoomId", sql.Int, overdue.Room_ID)
+                .input("BookingId", sql.Int, overdue.Booking_ID)
+                .query(`
+                    SELECT TOP 1 Booking_ID FROM BOOKINGS
+                    WHERE Room_ID = @RoomId AND Booking_ID != @BookingId
+                      AND Booking_Status_ID IN (2, 3)
+                `);
+            if (otherActive.recordset.length === 0) {
+                await databasePool
+                    .request()
+                    .input("RoomId", sql.Int, overdue.Room_ID)
+                    .query(`UPDATE ROOMS SET Status_ID = 1 WHERE Room_ID = @RoomId`);
+            }
+        }
+        // ── End auto-checkout ──
+
         const result = await databasePool.request().query(`
             SELECT 
                 b.Booking_ID,
