@@ -211,9 +211,9 @@
         <!-- LEFT: Controls Panel -->
         <div class="space-y-5">
 
-          <!-- Customer selector card -->
+          <!-- Enrollment card -->
           <div class="rounded-xl p-5" style="background: var(--bg-card); border: 1px solid var(--border-subtle);">
-            <h4 class="text-white font-semibold text-sm mb-4">Select Customer</h4>
+            <h4 class="text-white font-semibold text-sm mb-4">Enroll Customer</h4>
 
             <div>
               <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Customer</label>
@@ -237,16 +237,10 @@
                 <div id="selectedCustomerBadge" class="ml-auto flex-shrink-0"></div>
               </div>
             </div>
-          </div>
-
-          <!-- Scan controls card -->
-          <div class="rounded-xl p-5" style="background: var(--bg-card); border: 1px solid var(--border-subtle);">
-            <h4 class="text-white font-semibold text-sm mb-1">Enrollment Controls</h4>
-            <p class="text-slate-500 text-xs mb-4">Select a customer and press scan to enroll their face.</p>
 
             <button id="startScanButton" onclick="startFaceScan()"
               disabled
-              class="w-full py-3 rounded-lg text-sm font-semibold text-white transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              class="w-full mt-5 py-3 rounded-lg text-sm font-semibold text-white transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
               Start Face Scan
