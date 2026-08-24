@@ -12,6 +12,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const params = new URLSearchParams(window.location.search);
     const bookingId = params.get('bookingId');
     if (bookingId) {
+      const banner = document.getElementById('bookingSuccessBanner');
+      const bannerText = document.getElementById('bookingSuccessText');
+      const booking = allBookingsForPayment.find((b) => b.Booking_ID === Number(bookingId));
+      if (bannerText && booking) {
+        bannerText.textContent = `Booking #${booking.Booking_ID} for ${booking.Full_Name} \u2014 complete the payment below.`;
+      } else if (bannerText) {
+        bannerText.textContent = `Booking #${bookingId} created \u2014 complete the payment below.`;
+      }
+      if (banner) banner.classList.remove('hidden');
       openAddModalWithBooking(Number(bookingId));
       history.replaceState(null, '', 'payments.html');
     }
@@ -172,8 +181,9 @@ async function openAddModalWithBooking(bookingId) {
   document.getElementById('modalTitle').textContent = 'Add Payment';
   await loadMethodMap();
   await loadPaymentBookingOptions(bookingId);
-  document.getElementById('inputPaymentBooking').value = bookingId;
   const bookingSelect = document.getElementById('inputPaymentBooking');
+  bookingSelect.value = bookingId;
+  bookingSelect.disabled = true;
   const selectedOption = bookingSelect.options[bookingSelect.selectedIndex];
   const totalAmount = selectedOption ? selectedOption.dataset.total : '';
   const amountInput = document.getElementById('inputPaymentAmount');
@@ -217,6 +227,8 @@ function getTodayDateString() {
 
 function closeModal() {
   document.getElementById('paymentModal').classList.remove('open');
+  const bookingSelect = document.getElementById('inputPaymentBooking');
+  if (bookingSelect) bookingSelect.disabled = false;
 }
 
 function handleModalBackdropClick(event) {
