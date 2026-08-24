@@ -7,8 +7,15 @@ let deletingPaymentId = null;
 
 document.addEventListener('DOMContentLoaded', function () {
   requireAuthentication();
-  loadMethodMap(); 
-  renderPaymentsTable();
+  loadMethodMap();
+  renderPaymentsTable().then(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get('bookingId');
+    if (bookingId) {
+      openAddModalWithBooking(Number(bookingId));
+      history.replaceState(null, '', 'payments.html');
+    }
+  });
 });
 
 async function renderPaymentsTable() {
@@ -153,6 +160,26 @@ async function openAddModal() {
   await loadPaymentBookingOptions(null);
   document.getElementById('inputPaymentBooking').value = '';
   document.getElementById('inputPaymentAmount').value = '';
+  document.getElementById('inputPaymentMethod').value = '';
+  document.getElementById('inputPaymentDate').value = getTodayDateString();
+  document.getElementById('inputPaymentStatus').value = 'Paid';
+  hideAlertIn('modalAlert');
+  document.getElementById('paymentModal').classList.add('open');
+}
+
+async function openAddModalWithBooking(bookingId) {
+  editingPaymentId = null;
+  document.getElementById('modalTitle').textContent = 'Add Payment';
+  await loadMethodMap();
+  await loadPaymentBookingOptions(bookingId);
+  document.getElementById('inputPaymentBooking').value = bookingId;
+  const bookingSelect = document.getElementById('inputPaymentBooking');
+  const selectedOption = bookingSelect.options[bookingSelect.selectedIndex];
+  const totalAmount = selectedOption ? selectedOption.dataset.total : '';
+  const amountInput = document.getElementById('inputPaymentAmount');
+  if (amountInput && totalAmount) {
+    amountInput.value = Number(totalAmount).toFixed(2);
+  }
   document.getElementById('inputPaymentMethod').value = '';
   document.getElementById('inputPaymentDate').value = getTodayDateString();
   document.getElementById('inputPaymentStatus').value = 'Paid';

@@ -295,14 +295,20 @@ async function handleSaveBooking() {
   const payload = { guestId, roomId, checkIn, checkOut, totalPrice, status: statusLabel };
 
   try {
+    let result;
     if (editingBookingId) {
-      await API.put(`/bookings/${editingBookingId}`, payload);
+      result = await API.put(`/bookings/${editingBookingId}`, payload);
     } else {
-      await API.post('/bookings', payload);
+      result = await API.post('/bookings', payload);
     }
     closeModal();
     renderBookingsTable();
     showToast(editingBookingId ? 'Booking updated successfully.' : 'Booking created successfully.', 'success');
+    if (!editingBookingId && result.data) {
+      const newBookingId = result.data.Booking_ID;
+      window.location.href = `payments.html?bookingId=${newBookingId}`;
+      return;
+    }
   } catch (error) {
     showAlertIn('modalAlert', error.message || 'Failed to save booking.', 'error');
   }
