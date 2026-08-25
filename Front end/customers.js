@@ -98,7 +98,8 @@ function openEditModal(customerId) {
   document.getElementById('inputCustomerName').value = customer.Full_Name;
   document.getElementById('inputCustomerPhone').value = customer.Phone || '';
   document.getElementById('inputCustomerEmail').value = customer.Email || '';
-  document.getElementById('inputFaceEnrolled').value = customer.Is_Face_Enrolled ? 'true' : 'false';
+  document.getElementById('inputFaceEnrolled').textContent = customer.Is_Face_Enrolled ? 'Enrolled' : 'Not Enrolled';
+  document.getElementById('inputFaceEnrolled').className = 'w-full px-4 py-2.5 rounded-lg text-sm border border-white/10 ' + (customer.Is_Face_Enrolled ? 'bg-emerald-500/15 text-emerald-400' : 'bg-slate-500/15 text-slate-400');
   document.getElementById('faceEnrolledField').classList.remove('hidden');
   hideAlertIn('modalAlert');
   document.getElementById('customerModal').classList.add('open');
@@ -164,22 +165,8 @@ email
 
 if (editingCustomerId) {
 
+  // Face ID status is read-only
  
-const isFaceEnrolledSelect =
-  document.getElementById(
-    'inputFaceEnrolled'
-  );
-
-if (isFaceEnrolledSelect) {
-
-  payload.isFaceEnrolled =
-    isFaceEnrolledSelect.value === 'true'
-      ? 1
-      : 0;
-
-}
- 
-
 }
 
 try {

@@ -315,13 +315,8 @@
         <!-- Face Enrolled: only shown in Edit mode -->
         <div id="faceEnrolledField" class="hidden">
           <label class="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Face ID Status</label>
-          <select id="inputFaceEnrolled"
-            class="input-field w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10 transition-all appearance-none"
-            style="background: var(--bg-input);">
-            <option value="false">Not Enrolled</option>
-            <option value="true">Enrolled</option>
-          </select>
-          <p class="text-slate-600 text-xs mt-1.5">Face enrollment is normally done via the Face ID page.</p>
+          <div id="inputFaceEnrolled" class="w-full px-4 py-2.5 rounded-lg text-white text-sm border border-white/10" style="background: var(--bg-input);"></div>
+          <p class="text-slate-600 text-xs mt-1.5">Face enrollment is managed via the Face ID page and cannot be changed here.</p>
         </div>
 
       </div>
