@@ -314,6 +314,18 @@
       </div>
 
       <div class="px-6 py-4 max-h-96 overflow-y-auto">
+        <div class="relative mb-3">
+          <svg class="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <input
+            type="text"
+            id="allEnrolledSearchInput"
+            placeholder="Search by name or email..."
+            oninput="filterAllEnrolled()"
+            class="input-field w-full pl-9 pr-4 py-2 rounded-lg text-white placeholder-slate-500 text-sm border border-white/10 transition-all"
+            style="background: var(--bg-input);"
+          />
+        </div>
+        <p id="allEnrolledMatchCount" class="hidden text-slate-500 text-xs mb-2"></p>
         <div id="allEnrolledList" class="space-y-2">
           <p class="text-slate-600 text-xs text-center py-4">No enrolled customers.</p>
         </div>

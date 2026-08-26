@@ -140,17 +140,47 @@ function escapeHtml(value) {
 // ── All Enrolled Modal ─────────────────────────────────────────────
 
 function openAllEnrolledModal() {
+  const searchInput = document.getElementById('allEnrolledSearchInput');
+  if (searchInput) searchInput.value = '';
+  renderAllEnrolledList();
+  document.getElementById('allEnrolledModal').style.display = 'flex';
+}
+
+function filterAllEnrolled() {
+  renderAllEnrolledList();
+}
+
+function renderAllEnrolledList() {
+  const query = (document.getElementById('allEnrolledSearchInput').value || '').trim().toLowerCase();
   const enrolled = allCustomersForFaceId.filter((c) => c.Is_Face_Enrolled);
-  const modal = document.getElementById('allEnrolledModal');
+  const filtered = !query
+    ? enrolled
+    : enrolled.filter((c) => {
+        return (
+          String(c.Full_Name || '').toLowerCase().includes(query) ||
+          String(c.Email || '').toLowerCase().includes(query)
+        );
+      });
+
   const listEl = document.getElementById('allEnrolledList');
   const countEl = document.getElementById('allEnrolledModalCount');
-
+  const matchEl = document.getElementById('allEnrolledMatchCount');
   if (countEl) countEl.textContent = enrolled.length;
 
-  if (enrolled.length === 0) {
-    listEl.innerHTML = '<p class="text-slate-600 text-xs text-center py-4">No enrolled customers.</p>';
+  // Show match count when searching
+  if (matchEl) {
+    if (query) {
+      matchEl.textContent = `${filtered.length} of ${enrolled.length} customers match "${query}"`;
+      matchEl.classList.remove('hidden');
+    } else {
+      matchEl.classList.add('hidden');
+    }
+  }
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<p class="text-slate-600 text-xs text-center py-4">No enrolled customers found.</p>';
   } else {
-    listEl.innerHTML = enrolled
+    listEl.innerHTML = filtered
       .map(
         (customer) => `
         <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg" style="background: var(--bg-input);">
@@ -167,8 +197,6 @@ function openAllEnrolledModal() {
       )
       .join('');
   }
-
-  modal.style.display = 'flex';
 }
 
 function closeAllEnrolledModal() {
