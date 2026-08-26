@@ -216,7 +216,7 @@ def main():
 
     # ── 3. Warmup phase (2 seconds) ───────────────────────────────────
     warmup_start = time.time()
-    WARMUP_SECONDS = 10
+    WARMUP_SECONDS = 5
 
     while time.time() - warmup_start < WARMUP_SECONDS:
         ret, frame = camera.read()

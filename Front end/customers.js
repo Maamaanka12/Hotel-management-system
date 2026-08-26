@@ -84,8 +84,15 @@ function openAddModal() {
   document.getElementById('inputCustomerName').value = '';
   document.getElementById('inputCustomerPhone').value = '';
   document.getElementById('inputCustomerEmail').value = '';
+  document.getElementById('faceEnrollField').classList.remove('hidden');
   document.getElementById('faceEnrolledField').classList.add('hidden');
+  // Show face+save button, hide plain save button
+  document.getElementById('modalSaveButton').classList.add('hidden');
+  document.getElementById('modalFaceSaveButton').classList.remove('hidden');
+  resetFaceSaveButton();
   hideAlertIn('modalAlert');
+  hideAlertIn('faceScanStatus');
+  document.getElementById('faceScanStatus').classList.add('hidden');
   document.getElementById('customerModal').classList.add('open');
 }
 
@@ -100,8 +107,14 @@ function openEditModal(customerId) {
   document.getElementById('inputCustomerEmail').value = customer.Email || '';
   document.getElementById('inputFaceEnrolled').textContent = customer.Is_Face_Enrolled ? 'Enrolled' : 'Not Enrolled';
   document.getElementById('inputFaceEnrolled').className = 'w-full px-4 py-2.5 rounded-lg text-sm border border-white/10 ' + (customer.Is_Face_Enrolled ? 'bg-emerald-500/15 text-emerald-400' : 'bg-slate-500/15 text-slate-400');
+  document.getElementById('faceEnrollField').classList.add('hidden');
   document.getElementById('faceEnrolledField').classList.remove('hidden');
+  // Show plain save button, hide face+save button
+  document.getElementById('modalSaveButton').classList.remove('hidden');
+  document.getElementById('modalFaceSaveButton').classList.add('hidden');
   hideAlertIn('modalAlert');
+  hideAlertIn('faceScanStatus');
+  document.getElementById('faceScanStatus').classList.add('hidden');
   document.getElementById('customerModal').classList.add('open');
 }
 
@@ -172,16 +185,17 @@ if (editingCustomerId) {
 try {
 
  
+let saveResult;
 if (editingCustomerId) {
 
-  await API.put(
+  saveResult = await API.put(
     `/guests/${editingCustomerId}`,
     payload
   );
 
 } else {
 
-  await API.post(
+  saveResult = await API.post(
     '/guests',
     payload
   );
@@ -189,7 +203,6 @@ if (editingCustomerId) {
 }
 
 closeModal();
-
 renderCustomersTable();
 showToast(editingCustomerId ? 'Customer updated successfully.' : 'Customer added successfully.', 'success');
 
@@ -209,6 +222,82 @@ showAlertIn(
 }
 
 
+
+function resetFaceSaveButton() {
+  const btnText = document.getElementById('faceSaveBtnText');
+  const btnSpinner = document.getElementById('faceSaveBtnSpinner');
+  const btn = document.getElementById('modalFaceSaveButton');
+  if (btnText) btnText.classList.remove('hidden');
+  if (btnSpinner) btnSpinner.classList.add('hidden');
+  if (btn) btn.disabled = false;
+}
+
+async function handleFaceScanAndSave() {
+  // Validate fields first
+  const fullName = document.getElementById('inputCustomerName').value.trim();
+  const phone = document.getElementById('inputCustomerPhone').value.trim();
+  const email = document.getElementById('inputCustomerEmail').value.trim();
+
+  if (!fullName || !phone || !email) {
+    showAlertIn('modalAlert', 'Please fill in all required fields.', 'error');
+    return;
+  }
+  if (!/^[a-zA-Z\s'\-]+$/.test(fullName)) {
+    showAlertIn('modalAlert', 'Name must contain letters only.', 'error');
+    return;
+  }
+  if (!/^\+?[0-9]{7,15}$/.test(phone)) {
+    showAlertIn('modalAlert', 'Phone must contain numbers only (7–15 digits).', 'error');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showAlertIn('modalAlert', 'Enter a valid email address.', 'error');
+    return;
+  }
+
+  // Disable button and show spinner
+  const btn = document.getElementById('modalFaceSaveButton');
+  const btnText = document.getElementById('faceSaveBtnText');
+  const btnSpinner = document.getElementById('faceSaveBtnSpinner');
+  btn.disabled = true;
+  btnText.classList.add('hidden');
+  btnSpinner.classList.remove('hidden');
+  hideAlertIn('modalAlert');
+  hideAlertIn('faceScanStatus');
+
+  try {
+    // Step 1: Save the customer
+    const saveResult = await API.post('/guests', { fullName, phone, email });
+    const guestId = saveResult.data ? saveResult.data.Guest_ID : null;
+
+    if (!guestId) {
+      throw new Error('Customer saved but no guest ID returned.');
+    }
+
+    // Step 2: Scan face
+    const statusEl = document.getElementById('faceScanStatus');
+    statusEl.classList.remove('hidden');
+    showAlertIn('faceScanStatus', 'Opening camera for face scan...', 'info');
+
+    await API.post('/guests/scan-face', { guestId });
+
+    // Success
+    showAlertIn('faceScanStatus', 'Customer added and face enrolled successfully!', 'success');
+    showToast('Customer added and face enrolled successfully.', 'success');
+    await renderCustomersTable();
+    setTimeout(() => closeModal(), 1200);
+
+  } catch (error) {
+    const msg = error.message || 'Face scan failed. Please try again.';
+    showAlertIn('faceScanStatus', msg, 'error');
+    showToast(msg, 'error');
+    // Re-enable button so user can retry
+    btn.disabled = false;
+    btnText.classList.remove('hidden');
+    btnSpinner.classList.add('hidden');
+    await renderCustomersTable();
+  }
+}
 
 function openDeleteModal(customerId) {
   deletingCustomerId = customerId;
