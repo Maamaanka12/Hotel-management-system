@@ -259,6 +259,10 @@
             <div id="enrolledCustomersList" class="space-y-2">
               <p class="text-slate-600 text-xs text-center py-4">No customers enrolled yet.</p>
             </div>
+            <button id="seeAllEnrolledBtn" onclick="openAllEnrolledModal()"
+              class="hidden w-full mt-3 py-2 rounded-lg text-xs font-semibold text-gold transition-all hover:bg-white/5 border border-white/10">
+              See All Enrolled Customers
+            </button>
           </div>
 
         </div>
@@ -293,6 +297,37 @@
       </div>
     </div>
   </main>
+
+  <!-- ALL ENROLLED CUSTOMERS MODAL -->
+  <div class="modal-backdrop" id="allEnrolledModal" onclick="handleAllEnrolledBackdropClick(event)"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:50; align-items:center; justify-content:center; padding:1rem;">
+    <div class="modal-box w-full max-w-lg rounded-xl shadow-2xl" style="background: var(--bg-card); border: 1px solid var(--border-strong); animation: modalSlideIn 0.2s ease forwards;">
+
+      <div class="flex items-center justify-between px-6 py-5 border-b" style="border-color: var(--border-subtle);">
+        <div>
+          <h3 class="text-white font-semibold text-base">All Enrolled Customers</h3>
+          <p class="text-slate-500 text-xs mt-0.5"><span id="allEnrolledModalCount">0</span> customers enrolled</p>
+        </div>
+        <button onclick="closeAllEnrolledModal()" class="text-slate-500 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <div class="px-6 py-4 max-h-96 overflow-y-auto">
+        <div id="allEnrolledList" class="space-y-2">
+          <p class="text-slate-600 text-xs text-center py-4">No enrolled customers.</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end px-6 py-4 border-t" style="border-color: var(--border-subtle);">
+        <button onclick="closeAllEnrolledModal()"
+          class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <script src="api/api.js"></script>
   <script src="common.js"></script>

@@ -32,16 +32,20 @@ async function populateCustomerDropdown() {
 function renderEnrolledList() {
   const listContainer = document.getElementById('enrolledCustomersList');
   const countBadge = document.getElementById('enrolledCountBadge');
+  const seeAllBtn = document.getElementById('seeAllEnrolledBtn');
   const enrolled = allCustomersForFaceId.filter((customer) => customer.Is_Face_Enrolled);
 
   if (countBadge) countBadge.textContent = enrolled.length;
 
   if (enrolled.length === 0) {
     listContainer.innerHTML = '<p class="text-slate-600 text-xs text-center py-4">No customers enrolled yet.</p>';
+    if (seeAllBtn) seeAllBtn.classList.add('hidden');
     return;
   }
 
-  listContainer.innerHTML = enrolled
+  // Show only first 3
+  const preview = enrolled.slice(0, 3);
+  listContainer.innerHTML = preview
     .map(
       (customer) => `
       <div class="flex items-center gap-3 px-3 py-2 rounded-lg" style="background: var(--bg-input);">
@@ -54,6 +58,15 @@ function renderEnrolledList() {
     `
     )
     .join('');
+
+  // Show 'See All' button if more than 3
+  if (seeAllBtn) {
+    if (enrolled.length > 3) {
+      seeAllBtn.classList.remove('hidden');
+    } else {
+      seeAllBtn.classList.add('hidden');
+    }
+  }
 }
 
 function handleCustomerSelection() {
@@ -122,4 +135,46 @@ function escapeHtml(value) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+// ── All Enrolled Modal ─────────────────────────────────────────────
+
+function openAllEnrolledModal() {
+  const enrolled = allCustomersForFaceId.filter((c) => c.Is_Face_Enrolled);
+  const modal = document.getElementById('allEnrolledModal');
+  const listEl = document.getElementById('allEnrolledList');
+  const countEl = document.getElementById('allEnrolledModalCount');
+
+  if (countEl) countEl.textContent = enrolled.length;
+
+  if (enrolled.length === 0) {
+    listEl.innerHTML = '<p class="text-slate-600 text-xs text-center py-4">No enrolled customers.</p>';
+  } else {
+    listEl.innerHTML = enrolled
+      .map(
+        (customer) => `
+        <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg" style="background: var(--bg-input);">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #1e3a5f, #2a5298);">
+            ${escapeHtml((customer.Full_Name || '?').charAt(0).toUpperCase())}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-slate-200 text-sm font-medium truncate">${escapeHtml(customer.Full_Name)}</p>
+            <p class="text-slate-500 text-xs truncate">${escapeHtml(customer.Email || '—')}</p>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400">Enrolled</span>
+        </div>
+      `
+      )
+      .join('');
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeAllEnrolledModal() {
+  document.getElementById('allEnrolledModal').style.display = 'none';
+}
+
+function handleAllEnrolledBackdropClick(event) {
+  if (event.target.id === 'allEnrolledModal') closeAllEnrolledModal();
 }
