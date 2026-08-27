@@ -202,19 +202,21 @@
         <h2 class="text-white font-semibold text-lg">Payments</h2>
         <p class="text-slate-500 text-xs">Track all guest payments and transactions</p>
       </div>
-      <button onclick="openAddModal()"
-        class="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-        style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Add Payment
-      </button>
-      <!-- Theme toggle -->
-      <button data-theme-toggle onclick="toggleTheme()" title="Toggle light / dark mode"
-        class="text-slate-400 hover:text-gold transition-colors">
-        <svg class="theme-toggle-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05L5.636 5.636m12.728 0L16.95 7.05M7.05 16.95l-1.414 1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-        </svg>
-      </button>
+      <div class="flex items-center gap-3 ml-auto">
+        <!-- Theme toggle -->
+        <button data-theme-toggle onclick="toggleTheme()" title="Toggle light / dark mode"
+          class="text-slate-400 hover:text-gold transition-colors">
+          <svg class="theme-toggle-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05L5.636 5.636m12.728 0L16.95 7.05M7.05 16.95l-1.414 1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+        </button>
+        <button onclick="openAddModal()"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+          style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add Payment
+        </button>
+      </div>
     </header>
 
     <div class="flex-1 overflow-y-auto px-6 py-6">
