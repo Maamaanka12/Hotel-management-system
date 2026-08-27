@@ -1,12 +1,19 @@
 document.addEventListener('DOMContentLoaded', function () {
   requireAuthentication();
+  renderSidebar('dashboard');
+  renderHeader({
+    title: 'Dashboard',
+    actions: `<span class="text-slate-400 text-sm hidden sm:block">Welcome, <span id="headerUserName" class="text-white font-medium">—</span></span><div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background: linear-gradient(135deg, #B8962E, #D4AF54);"><span id="headerUserInitial">?</span></div>`
+  });
+  renderUserBadge();
   displayCurrentDate();
   loadDashboardStatistics();
   loadRecentBookings();
 });
 
 function displayCurrentDate() {
-  const dateElement = document.getElementById('currentDateDisplay');
+  const header = document.querySelector('main > header');
+  const dateElement = header ? header.querySelector('p.text-slate-500') : null;
   if (!dateElement) return;
   const today = new Date();
   dateElement.textContent = today.toLocaleDateString('en-US', {

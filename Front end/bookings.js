@@ -26,6 +26,13 @@ const ACTIVE_STATUS_IDS = new Set([1, 2, 3]);
 
 document.addEventListener('DOMContentLoaded', function () {
   requireAuthentication();
+  renderSidebar('bookings');
+  renderHeader({
+    title: 'Bookings',
+    subtitle: 'Manage all guest room reservations',
+    actions: `<button onclick="openAddModal()" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]" style="background: linear-gradient(135deg, #B8962E, #D4AF54);"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>New Booking</button>`
+  });
+  renderUserBadge();
   setMinimumCheckInDate();
   setupDurationPreview();
   renderBookingsTable();

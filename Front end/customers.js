@@ -4,6 +4,13 @@ let deletingCustomerId = null;
 
 document.addEventListener('DOMContentLoaded', function () {
   requireAuthentication();
+  renderSidebar('customers');
+  renderHeader({
+    title: 'Customers',
+    subtitle: 'Manage all registered hotel guests',
+    actions: `<button onclick="openAddModal()" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]" style="background: linear-gradient(135deg, #B8962E, #D4AF54);"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>Add Customer</button>`
+  });
+  renderUserBadge();
   renderCustomersTable();
 });
 

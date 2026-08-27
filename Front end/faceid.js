@@ -3,6 +3,12 @@ let allCustomersForFaceId = [];
 
 document.addEventListener('DOMContentLoaded', async function () {
   requireAuthentication();
+  renderSidebar('faceid');
+  renderHeader({
+    title: 'Face ID',
+    subtitle: 'Enroll and verify customer face recognition'
+  });
+  renderUserBadge();
   await populateCustomerDropdown();
 });
 

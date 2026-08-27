@@ -34,92 +34,9 @@
     };
   </script>
 
+  <link rel="stylesheet" href="theme.css" />
   <style>
-    body { font-family: "Inter", sans-serif; background: var(--bg-app); color: var(--text-primary); }
-    .nav-link { transition: background 0.15s ease, color 0.15s ease; }
-    .nav-link:hover { background: rgba(184,150,46,0.08); color: #D4AF54; }
-    .nav-link.active { background: rgba(184,150,46,0.12); color: #D4AF54; border-left: 3px solid #B8962E; }
-    .nav-link.active svg { color: #B8962E; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 20; }
-    .sidebar-overlay.visible { display: block; }
     .input-field:focus { outline: none; border-color: #B8962E; box-shadow: 0 0 0 3px rgba(184,150,46,0.15); }
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: var(--bg-app); }
-    ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 3px; }
-
-    /* ── Theme system (dark default, light via html.light) ── */
-    :root {
-      --bg-app: #0C0F1A;
-      --bg-sidebar: #0E1322;
-      --bg-surface: #12172B;
-      --bg-card: #1A2040;
-      --bg-input: #0E1322;
-      --border-subtle: rgba(255,255,255,0.05);
-      --border-strong: rgba(255,255,255,0.08);
-      --row-hover: rgba(255,255,255,0.03);
-      --text-primary: #ffffff;
-      --text-label: #cbd5e1;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --text-faint: #475569;
-      --text-ghost: #334155;
-      --scheme: dark;
-    }
-    html.light {
-      --bg-app: #f1f5f9;
-      --bg-sidebar: #ffffff;
-      --bg-surface: #ffffff;
-      --bg-card: #ffffff;
-      --bg-input: #f8fafc;
-      --border-subtle: rgba(15,23,42,0.08);
-      --border-strong: rgba(15,23,42,0.12);
-      --row-hover: rgba(15,23,42,0.04);
-      --text-primary: #0f172a;
-      --text-label: #334155;
-      --text-secondary: #475569;
-      --text-muted: #64748b;
-      --text-faint: #94a3b8;
-      --text-ghost: #cbd5e1;
-      --scheme: light;
-    }
-
-    /* Recolor Tailwind text/border utilities in light mode */
-    html.light .text-white { color: var(--text-primary) !important; }
-    html.light .text-slate-200 { color: var(--text-label) !important; }
-    html.light .text-slate-300 { color: var(--text-label) !important; }
-    html.light .text-slate-400 { color: var(--text-secondary) !important; }
-    html.light .text-slate-500 { color: var(--text-muted) !important; }
-    html.light .text-slate-600 { color: var(--text-faint) !important; }
-    html.light .text-slate-700 { color: var(--text-ghost) !important; }
-    html.light .hover\:text-white:hover { color: var(--text-primary) !important; }
-    html.light .hover\:text-slate-200:hover { color: var(--text-label) !important; }
-    html.light .border-white\/5,
-    html.light .border-white\/10 { border-color: var(--border-subtle) !important; }
-    html.light .bg-white\/5 { background-color: var(--row-hover) !important; }
-    html.light .hover\:bg-white\/5:hover { background-color: var(--row-hover) !important; }
-
-    /* Gold accents read better when darker on light surfaces */
-    html.light .text-gold,
-    html.light .text-gold-light { color: #8A6E1A !important; }
-    html.light .nav-link:hover,
-    html.light .nav-link.active { color: #8A6E1A; }
-    html.light .nav-link.active svg { color: #8A6E1A; }
-    html.light .active-filter { color: #8A6E1A; }
-
-    /* Status colors: deepen for contrast on white surfaces */
-    html.light .text-green-400 { color: #059669 !important; }
-    html.light .text-emerald-400 { color: #059669 !important; }
-    html.light .text-amber-400 { color: #b45309 !important; }
-    html.light .text-red-400 { color: #dc2626 !important; }
-    html.light .text-rose-400 { color: #e11d48 !important; }
-    html.light .text-blue-400 { color: #2563eb !important; }
-    html.light .text-violet-400 { color: #7c3aed !important; }
-    html.light .text-teal-400 { color: #0d9488 !important; }
-
-    /* Native date pickers + scrollbar follow the theme */
-    html.light input[type="date"]::-webkit-calendar-picker-indicator { filter: none; }
-    html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
-
   </style>
 </head>
 
@@ -127,77 +44,13 @@
 
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-  <!-- SIDEBAR -->
   <aside id="sidebar"
     class="fixed lg:static inset-y-0 left-0 z-30 w-64 flex flex-col flex-shrink-0 overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300"
-    style="background: var(--bg-sidebar); border-right: 1px solid var(--border-subtle);">
-    <div class="px-6 py-6 border-b" style="border-color: var(--border-subtle);">
-      <p class="text-gold text-xs font-semibold tracking-[0.2em] uppercase">Staff Portal</p>
-      <h1 class="font-display text-white text-xl font-bold mt-1">Grand HMS</h1>
-    </div>
-    <nav class="flex-1 px-3 py-5 space-y-1">
-      <p class="text-slate-600 text-xs font-semibold uppercase tracking-widest px-3 mb-3">Main</p>
-      <a href="dashboard.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        Dashboard
-      </a>
-      <a href="rooms.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-        Rooms
-      </a>
-      <a href="customers.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        Customers
-      </a>
-      <a href="bookings.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        Bookings
-      </a>
-      <a href="payments.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-        Payments
-      </a>
-      <p class="text-slate-600 text-xs font-semibold uppercase tracking-widest px-3 mt-5 mb-3">Smart Features</p>
-      <a href="faceid.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
-        Face ID
-      </a>
-    </nav>
-    <div class="px-4 py-4 border-t" style="border-color: var(--border-subtle);">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #B8962E, #D4AF54);">
-          <span id="userInitial">?</span>
-        </div>
-        <div class="min-w-0">
-          <p id="userName" class="text-white text-sm font-medium truncate">Loading...</p>
-          <p id="userRole" class="text-slate-500 text-xs truncate">—</p>
-        </div>
-        <button onclick="handleLogout()" title="Sign Out" class="ml-auto text-slate-500 hover:text-red-400 transition-colors flex-shrink-0">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-        </button>
-      </div>
-    </div>
-  </aside>
+    style="background: var(--bg-sidebar); border-right: 1px solid var(--border-subtle);"></aside>
 
-  <!-- MAIN CONTENT -->
   <main class="flex-1 flex flex-col overflow-hidden">
 
-    <header class="flex items-center justify-between px-6 py-4 flex-shrink-0" style="background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle);">
-      <button onclick="openSidebar()" class="lg:hidden text-slate-400 hover:text-white">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-      </button>
-      <div class="hidden lg:block">
-        <h2 class="text-white font-semibold text-lg">Face ID</h2>
-        <p class="text-slate-500 text-xs">Enroll and verify customer face recognition</p>
-      </div>
-      <!-- Theme toggle -->
-      <button data-theme-toggle onclick="toggleTheme()" title="Toggle light / dark mode"
-        class="text-slate-400 hover:text-gold transition-colors ml-auto">
-        <svg class="theme-toggle-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05L5.636 5.636m12.728 0L16.95 7.05M7.05 16.95l-1.414 1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-        </svg>
-      </button>
-    </header>
+    <header class="flex items-center justify-between px-6 py-4 flex-shrink-0" style="background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle);"></header>
 
     <div class="flex-1 overflow-y-auto px-6 py-6">
 
@@ -343,6 +196,7 @@
 
   <script src="api/api.js"></script>
   <script src="common.js"></script>
+  <script src="components.js"></script>
   <script src="faceid.js"></script>
   
 </body>
