@@ -286,6 +286,7 @@
 
             <!-- Submit -->
             <button
+              id="registerSubmitBtn"
               onclick="handleRegister()"
               class="w-full py-3 rounded-lg font-semibold text-sm text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] mt-2"
               style="background: linear-gradient(135deg, #B8962E, #D4AF54);"
@@ -294,6 +295,45 @@
             </button>
 
           </div>
+
+          <!-- ── Post-Registration: Face Enrollment Panel ── -->
+          <div id="faceRegistrationPanel" class="hidden">
+            <div class="text-center mb-6">
+              <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4" style="background: rgba(184,150,46,0.15);">
+                <svg class="w-8 h-8 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </div>
+              <h3 class="text-white font-semibold text-base">Account Created!</h3>
+              <p class="text-slate-400 text-sm mt-1">Would you like to register your face for Face&nbsp;ID login?</p>
+            </div>
+
+            <div id="faceRegistrationAlert" class="hidden mb-4 px-4 py-3 rounded-lg text-sm font-medium"></div>
+
+            <button
+              id="registerFaceBtn"
+              onclick="handleRegisterFace()"
+              class="w-full py-3 rounded-lg font-semibold text-sm text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+              style="background: linear-gradient(135deg, #B8962E, #D4AF54);"
+            >
+              <span class="flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                Register Face
+              </span>
+            </button>
+
+            <button
+              onclick="handleSkipFaceRegistration()"
+              class="w-full mt-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all border border-white/10"
+            >
+              Skip for now
+            </button>
+          </div>
+
         </div>
 
       </div>

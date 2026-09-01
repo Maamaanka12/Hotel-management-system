@@ -20,6 +20,12 @@ const express = require("express");
 const sql = require("mssql");
 
 /**
+ * Import the child_process spawn function to run the Python face scanner script.
+ */
+const { spawn } = require("child_process");
+const path = require("path");
+
+/**
  * Create the router instance that will hold authentication endpoints.
  */
 const router = express.Router();
@@ -238,4 +244,124 @@ router.post("/login", async (request, response) => {
 /**
  * Export the router so server.js can mount it at /api/auth.
  */
+/**
+ * POST /api/auth/register-face
+ *
+ * Purpose:
+ * Capture a face for a newly registered staff user using the Python OpenCV face scanner,
+ * then save the face embedding to the USERS table.
+ *
+ * Request body:
+ * {
+ *   "userId": 1
+ * }
+ */
+router.post("/register-face", async (request, response) => {
+    try {
+        const userId = Number(request.body.userId);
+
+        if (!userId) {
+            return sendErrorResponse(response, 400, "Valid user ID is required.");
+        }
+
+        const databasePool = getDatabasePool();
+
+        /**
+         * Verify the user exists before scanning.
+         */
+        const userCheck = await databasePool
+            .request()
+            .input("UserId", sql.Int, userId)
+            .query(`SELECT User_ID FROM USERS WHERE User_ID = @UserId`);
+
+        if (userCheck.recordset.length === 0) {
+            return sendErrorResponse(response, 404, "User not found.");
+        }
+
+        /**
+         * Spawn the Python face scanner, passing the userId so it can be used
+         * as an identifier in the same way the guest scanner works.
+         */
+        const pythonCommand = path.join(__dirname, "..", ".venv311", "Scripts", "python.exe");
+        const pythonArguments = ["face_scanner.py", String(userId)];
+
+        const pythonProcess = spawn(pythonCommand, pythonArguments, {
+            stdio: ["ignore", "pipe", "pipe"],
+            cwd: path.join(__dirname, "..")
+        });
+
+        let standardOutputBuffer = "";
+        let standardErrorBuffer = "";
+
+        pythonProcess.stdout.on("data", (outputChunk) => {
+            standardOutputBuffer += outputChunk.toString();
+        });
+
+        pythonProcess.stderr.on("data", (errorChunk) => {
+            standardErrorBuffer += errorChunk.toString();
+        });
+
+        pythonProcess.on("error", (processError) => {
+            console.error("Python spawn error:", processError);
+            return sendErrorResponse(response, 500, "Failed to start face scanning process.");
+        });
+
+        pythonProcess.on("close", async (exitCode) => {
+            try {
+                if (exitCode !== 0) {
+                    console.error("Python process stderr:", standardErrorBuffer);
+                    return sendErrorResponse(response, 500, "Face scanner process failed.");
+                }
+
+                const scannerResult = JSON.parse(String(standardOutputBuffer || "").trim());
+
+                if (!scannerResult.success) {
+                    return response.status(400).json({
+                        success: false,
+                        message: scannerResult.message || "Face scan did not succeed.",
+                        data: scannerResult
+                    });
+                }
+
+                const faceEmbeddingValue = scannerResult.faceEmbedding || null;
+
+                if (!faceEmbeddingValue) {
+                    return sendErrorResponse(response, 500, "Python script did not return a face embedding.");
+                }
+
+                /**
+                 * Update the user record with the enrollment flag and embedding data.
+                 */
+                await databasePool
+                    .request()
+                    .input("UserId", sql.Int, userId)
+                    .input("FaceEmbedding", sql.NVarChar(sql.MAX), faceEmbeddingValue)
+                    .query(`
+                        UPDATE USERS
+                        SET
+                            Is_Face_Enrolled = 1,
+                            Face_Embedding = @FaceEmbedding
+                        WHERE User_ID = @UserId
+                    `);
+
+                return response.status(200).json({
+                    success: true,
+                    message: "Face enrollment completed successfully.",
+                    data: {
+                        userId: userId,
+                        faceEmbedding: faceEmbeddingValue
+                    }
+                });
+            } catch (processingError) {
+                console.error("Face scan processing error:", processingError);
+                console.error("Python stderr output:", standardErrorBuffer);
+                return sendErrorResponse(response, 500, "Failed to process face scan results.");
+            }
+        });
+    } catch (error) {
+        console.error("Register face route error:", error);
+        return sendErrorResponse(response, 500, "Failed to register face.");
+    }
+});
+
 module.exports = router;
