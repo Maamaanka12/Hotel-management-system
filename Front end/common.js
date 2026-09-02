@@ -187,6 +187,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+// ── Shared Utility Functions ─────────────────────────────────────────
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function formatDate(value) {
+  if (!value) return '\u2014';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '\u2014';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function setText(elementId, value) {
+  const el = document.getElementById(elementId);
+  if (el) el.textContent = value;
+}
+
 function setupMobileSidebarToggle() {
     // temporary fix
 }
@@ -212,3 +234,7 @@ window.showToast = showToast;
 window.applyTheme = applyTheme;
 window.toggleTheme = toggleTheme;
 window.getSavedTheme = getSavedTheme;
+
+window.escapeHtml = escapeHtml;
+window.formatDate = formatDate;
+window.setText = setText;

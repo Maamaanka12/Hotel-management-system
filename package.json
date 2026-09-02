@@ -4,6 +4,7 @@
   "description": "This project is a hotel management system that helps staff manage guests, rooms, bookings, payments, smart room controls, and face-based check-in/enrollment from one place.",
   "main": "index.js",
   "scripts": {
+    "start": "node backend/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
