@@ -24,7 +24,10 @@ const sql = require("mssql");
  */
 const { spawn } = require("child_process");
 const path = require("path");
+const bcrypt = require("bcrypt");
 const { getDatabasePool, sendErrorResponse } = require("../utils/helpers");
+
+const BCRYPT_SALT_ROUNDS = 10;
 
 /**
  * Create the router instance that will hold authentication endpoints.
@@ -89,20 +92,15 @@ router.post("/register", async (request, response) => {
         }
 
         /**
-         * Insert the new user into the USERS table.
-         *
-         * SQL parameter definitions:
-         * - @UserName: the staff username string.
-         * - @Password: the staff password string.
-         * - @UserRole: the assigned role, such as ADMIN or STAFF.
-         *
-         * Note:
-         * In a production environment, passwords should be hashed before storage.
+         * Hash the password with bcrypt before storing it.
+         * This ensures plain-text passwords are never saved to the database.
          */
+        const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+
         const insertResult = await databasePool
             .request()
             .input("UserName", sql.NVarChar(100), userName)
-            .input("Password", sql.NVarChar(255), password)
+            .input("Password", sql.NVarChar(255), hashedPassword)
             .input("UserRole", sql.NVarChar(50), userRole)
             .query(`
                 INSERT INTO USERS (User_Name, Password, User_Role)
@@ -165,43 +163,45 @@ router.post("/login", async (request, response) => {
         const databasePool = getDatabasePool();
 
         /**
-         * Query for a matching user record.
-         *
-         * SQL parameter definitions:
-         * - @UserName: login identifier.
-         * - @Password: supplied password.
-         *
-         * Important:
-         * This example uses plain-text password matching only because the prompt
-         * requires validation directly against the USERS table rows.
-         * In a real system, password hashing should be added immediately.
+         * Fetch the user by username only.
+         * Password verification happens in application code via bcrypt.compare().
          */
         const loginResult = await databasePool
             .request()
             .input("UserName", sql.NVarChar(100), userName)
-            .input("Password", sql.NVarChar(255), password)
             .query(`
-                SELECT User_ID, User_Name, User_Role
+                SELECT User_ID, User_Name, Password, User_Role
                 FROM USERS
                 WHERE User_Name = @UserName
-                  AND Password = @Password
             `);
 
-        /**
-         * If no rows are returned, the credentials are invalid.
-         */
         if (loginResult.recordset.length === 0) {
             return sendErrorResponse(response, 401, "Invalid user name or password.");
         }
 
+        const user = loginResult.recordset[0];
+
         /**
-         * Return the authenticated user record.
-         * A frontend can use this payload to store session information locally.
+         * Compare the supplied password against the stored bcrypt hash.
+         * bcrypt.compare handles salt extraction internally.
+         */
+        const passwordMatch = await bcrypt.compare(password, user.Password);
+
+        if (!passwordMatch) {
+            return sendErrorResponse(response, 401, "Invalid user name or password.");
+        }
+
+        /**
+         * Return the authenticated user record (without the password hash).
          */
         return response.status(200).json({
             success: true,
             message: "Login successful.",
-            data: loginResult.recordset[0]
+            data: {
+                User_ID: user.User_ID,
+                User_Name: user.User_Name,
+                User_Role: user.User_Role
+            }
         });
     } catch (error) {
         /**
