@@ -33,54 +33,13 @@ const sql = require("mssql");
  * Import the child_process spawn function to run the Python face scanner script.
  */
 const { spawn } = require("child_process");
+const path = require("path");
+const { getDatabasePool, sendErrorResponse } = require("../utils/helpers");
 
 /**
  * Create the router instance.
  */
 const router = express.Router();
-
-
-
-const path = require("path");
-
-
-
-// const pythonProcess = spawn(pythonCommand, pythonArguments, {
-//     stdio: ["ignore", "pipe", "pipe"],
-//     cwd: path.join(__dirname, "..")   // points to backend/
-// });
-
-
-
-
-
-/**
- * Get the shared MSSQL pool initialized in server.js.
- *
- * @returns {sql.ConnectionPool}
- * @throws {Error} If the database pool is not available.
- */
-function getDatabasePool() {
-    if (!sql.globalDatabasePool) {
-        throw new Error("Database connection pool has not been initialized.");
-    }
-
-    return sql.globalDatabasePool;
-}
-
-/**
- * Send a standard JSON error response.
- *
- * @param {object} response - Express response object.
- * @param {number} statusCode - HTTP status code.
- * @param {string} message - Error message.
- */
-function sendErrorResponse(response, statusCode, message) {
-    return response.status(statusCode).json({
-        success: false,
-        message: message
-    });
-}
 
 /**
  * Safely parse JSON from a buffered stdout string.

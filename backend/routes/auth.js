@@ -24,41 +24,12 @@ const sql = require("mssql");
  */
 const { spawn } = require("child_process");
 const path = require("path");
+const { getDatabasePool, sendErrorResponse } = require("../utils/helpers");
 
 /**
  * Create the router instance that will hold authentication endpoints.
  */
 const router = express.Router();
-
-/**
- * Helper function that retrieves the globally shared database pool.
- * The pool is created in server.js and attached to the sql module so all routers can reuse it.
- *
- * This function throws a descriptive error if the pool is not available, which helps
- * detect startup or configuration issues early.
- */
-function getDatabasePool() {
-    if (!sql.globalDatabasePool) {
-        throw new Error("Database connection pool has not been initialized.");
-    }
-
-    return sql.globalDatabasePool;
-}
-
-/**
- * Helper function that sends a consistent JSON error response.
- * Keeping this logic centralized makes route handlers easier to read.
- *
- * @param {object} response - Express response object.
- * @param {number} statusCode - HTTP status code.
- * @param {string} message - Human-readable error message.
- */
-function sendErrorResponse(response, statusCode, message) {
-    return response.status(statusCode).json({
-        success: false,
-        message: message
-    });
-}
 
 /**
  * POST /api/auth/register

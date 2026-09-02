@@ -3,20 +3,7 @@
 const express = require("express");
 const sql = require("mssql");
 const router = express.Router();
-
-function getDatabasePool() {
-    if (!sql.globalDatabasePool) {
-        throw new Error("Database connection pool has not been initialized.");
-    }
-    return sql.globalDatabasePool;
-}
-
-function sendErrorResponse(response, statusCode, message) {
-    return response.status(statusCode).json({
-        success: false,
-        message: message
-    });
-}
+const { getDatabasePool, sendErrorResponse } = require("../utils/helpers");
 
 
 //
