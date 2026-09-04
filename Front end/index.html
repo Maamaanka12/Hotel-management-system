@@ -13,24 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 
-  <script>
-    // Extend Tailwind with custom design tokens for the HMS brand
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            gold:    { DEFAULT: "#B8962E", light: "#D4AF54", dark: "#8A6E1A" },
-            slate:   { 950: "#0C0F1A" },
-            surface: { DEFAULT: "#12172B", card: "#1A2040", input: "#0E1322" },
-          },
-          fontFamily: {
-            display: ["Playfair Display", "serif"],
-            body:    ["Inter", "sans-serif"],
-          },
-        },
-      },
-    };
-  </script>
+  <script src="tailwind-config.js"></script>
 
   <style>
     body { font-family: "Inter", sans-serif; }
